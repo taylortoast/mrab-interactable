@@ -1,29 +1,52 @@
-.builder-layout {
-  display: grid;
-  grid-template-columns: 42rem minmax(0, 1fr);
-  gap: 2rem;
-  padding: 2rem;
-  align-items: start;
-}
+/* ── Tab navigation ──────────────────────────────────────────────────────── */
 
-.builder-left {
+.tab-nav {
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  gap: 0;
+  padding: 0 2rem;
+  background: #0b1728;
+  border-bottom: 1px solid var(--border);
 }
 
-.preview-panel {
-  position: sticky;
-  top: 2rem;
+.tab-btn {
+  padding: 1.2rem 2rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
+  font-size: 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
 }
 
-.builder-panel {
+.tab-btn:hover { color: var(--text); }
+
+.tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Tab panels ──────────────────────────────────────────────────────────── */
+
+.tab-main { padding: 2rem; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+.panel-content {
+  max-width: 72rem;
+  margin: 0 auto;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 1.2rem;
-  padding: 1.6rem;
+  padding: 2rem 2.4rem;
   box-shadow: var(--shadow);
 }
+
+.panel-content h2 { margin-bottom: 0.4rem; }
+
+/* ── Form elements ───────────────────────────────────────────────────────── */
 
 label {
   display: grid;
@@ -45,33 +68,20 @@ select {
 
 textarea { min-height: 6rem; resize: vertical; }
 
-.json-preview {
-  min-height: 42rem;
-  overflow: auto;
-  background: #09111f;
-  padding: 1rem;
-  border-radius: 0.8rem;
-}
+.form-grid { display: flex; flex-direction: column; }
 
-/* Section headers with inline action buttons */
-.section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.8rem;
-}
-.section-header h2,
-.section-header h3 { margin: 0; }
+/* ── Building / entity / item rows ───────────────────────────────────────── */
 
-/* Building / entity / item rows */
+.building-list { margin-top: 1.2rem; }
+
 .building-row,
 .entity-row,
 .item-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 0.8rem;
-  margin-bottom: 0.4rem;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
   background: var(--panel-dark);
   border-radius: 0.6rem;
   border: 1px solid var(--border);
@@ -82,40 +92,29 @@ textarea { min-height: 6rem; resize: vertical; }
 .row-actions {
   display: flex;
   gap: 0.4rem;
+  flex-shrink: 0;
 }
 
-/* Small buttons */
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
 .btn-sm {
   padding: 0.4rem 0.7rem !important;
   font-size: 0.8rem !important;
 }
 
-.btn-sm.danger {
-  border: 1px solid #e55;
-  color: #e55;
-}
-.btn-sm.danger:hover {
-  background: rgba(220, 80, 80, 0.15);
-}
+.btn-sm.danger { border: 1px solid #e55; color: #e55; }
+.btn-sm.danger:hover { background: rgba(220, 80, 80, 0.15); }
 
-/* Bounds fieldset */
-.bounds-fieldset {
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  padding: 0.8rem;
-  margin-bottom: 1rem;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
-}
-.bounds-fieldset legend {
-  font-weight: 700;
-  padding: 0 0.4rem;
-  font-size: 0.85rem;
-}
-.bounds-fieldset label { margin-bottom: 0; }
+/* ── Section headers ─────────────────────────────────────────────────────── */
 
-.form-grid { display: flex; flex-direction: column; }
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+.section-header h2,
+.section-header h3 { margin: 0; }
 
 .section-divider {
   border: none;
@@ -123,7 +122,8 @@ textarea { min-height: 6rem; resize: vertical; }
   margin: 1.2rem 0;
 }
 
-/* Badge */
+/* ── Badge ───────────────────────────────────────────────────────────────── */
+
 .badge {
   font-size: 0.72rem;
   font-weight: 600;
@@ -136,10 +136,9 @@ textarea { min-height: 6rem; resize: vertical; }
   margin-left: 0.4rem;
 }
 
-/* Evaluation output */
-.evaluation-output {
-  margin-top: 1rem;
-}
+/* ── Evaluation output ───────────────────────────────────────────────────── */
+
+.evaluation-output { margin-top: 1.4rem; }
 
 .eval-summary {
   padding: 0.8rem 1rem;
@@ -157,9 +156,9 @@ textarea { min-height: 6rem; resize: vertical; }
   background: var(--panel-dark);
 }
 
-.eval-correct { border-left-color: #3c8; }
+.eval-correct  { border-left-color: #3c8; }
 .eval-incorrect { border-left-color: #e55; }
-.eval-unknown { border-left-color: #888; opacity: 0.7; }
+.eval-unknown  { border-left-color: #888; opacity: 0.7; }
 
 .eval-meta {
   display: flex;
@@ -178,13 +177,62 @@ textarea { min-height: 6rem; resize: vertical; }
   margin-bottom: 0.3rem;
 }
 
-.eval-result {
-  font-weight: 700;
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-}
-
-.eval-correct .eval-result { color: #3c8; }
+.eval-result { font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; }
+.eval-correct .eval-result  { color: #3c8; }
 .eval-incorrect .eval-result { color: #e55; }
 
 .eval-feedback { font-size: 0.85rem; }
+
+/* ── Student submission cards ─────────────────────────────────────────────── */
+
+.student-card {
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  margin-bottom: 1.6rem;
+  overflow: hidden;
+}
+
+.student-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.4rem;
+  background: var(--panel-dark);
+  border-bottom: 1px solid var(--border);
+  gap: 1rem;
+}
+
+.student-name {
+  font-size: 1.6rem;
+  font-weight: 700;
+  display: block;
+}
+
+.student-submitted {
+  font-size: 1.1rem;
+  display: block;
+  margin-top: 0.2rem;
+}
+
+.student-score {
+  font-size: 1.6rem;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 0.4rem 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--border);
+}
+
+.score-perfect  { color: #3c8; border-color: #3c8; }
+.score-passing  { color: #fb0; border-color: #fb0; }
+.score-failing  { color: #e55; border-color: #e55; }
+
+.student-card-body { padding: 1rem 1.4rem; }
+
+code {
+  font-family: monospace;
+  background: var(--panel-dark);
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+  font-size: 0.9em;
+}

@@ -8,46 +8,40 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
   <header class="app-header">
     <div>
       <p class="eyebrow">Instructor/Admin</p>
       <h1>Scenario Builder</h1>
     </div>
-    <div class="button-row">
-      <label class="secondary-btn">Import Scenario <input id="importScenarioInput" type="file" accept=".js,application/javascript,application/json" hidden /></label>
-      <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
-    </div>
+    <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
   </header>
 
-  <main class="builder-layout">
+  <nav class="tab-nav">
+    <button class="tab-btn active" data-tab="buildings">Buildings</button>
+    <button class="tab-btn" data-tab="evaluation">Student Evaluation</button>
+  </nav>
 
-    <div class="builder-left">
-      <section class="builder-panel">
-        <h2>Scenario Foundation</h2>
-        <label>Scenario Title <input id="scenarioTitleInput" type="text" /></label>
-        <label>Description <textarea id="scenarioDescriptionInput"></textarea></label>
-      </section>
+  <main class="tab-main">
 
-      <section class="builder-panel">
-        <div class="section-header">
-          <h2>Buildings</h2>
-          <button id="addBuildingBtn" class="secondary-btn">+ Add Building</button>
-        </div>
+    <div id="tab-buildings" class="tab-panel active">
+      <div class="panel-content">
+        <h2>Buildings</h2>
+        <p class="muted">Select a building to manage its contacts and collection items.</p>
         <div id="buildingList" class="building-list"></div>
-      </section>
-
-      <section class="builder-panel">
-        <h2>Student Evaluation</h2>
-        <p class="muted">Load a student results file to review decisions.</p>
-        <label class="secondary-btn">Load Results <input id="importResultsInput" type="file" accept="application/json" hidden /></label>
-        <div id="evaluationOutput" class="evaluation-output"></div>
-      </section>
+      </div>
     </div>
 
-    <section class="builder-panel preview-panel">
-      <h2>Current Scenario JSON</h2>
-      <pre id="scenarioPreview" class="json-preview"></pre>
-    </section>
+    <div id="tab-evaluation" class="tab-panel">
+      <div class="panel-content">
+        <h2>Student Evaluation</h2>
+        <p class="muted">
+          Submissions load automatically from <code>instructor/submissions/</code>.
+          Open <code>submissions/index.js</code> for instructions on adding new submissions.
+        </p>
+        <div id="evaluationOutput" class="evaluation-output"></div>
+      </div>
+    </div>
 
   </main>
 
@@ -57,6 +51,7 @@
   <script src="../shared/js/scenarioLoader.js"></script>
   <script src="../shared/js/modal.js"></script>
   <script src="../shared/js/jsonUtils.js"></script>
+  <script src="./submissions/index.js"></script>
   <script src="./js/instructorApp.js"></script>
 </body>
 </html>

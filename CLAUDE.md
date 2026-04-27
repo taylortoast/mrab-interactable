@@ -3,10 +3,10 @@
 ## What This Is
 
 A local HTML/CSS/JS training tool for the 335th Training Squadron. Two websites:
-- **Student** (`student/`) – interactive map, click buildings, interact with entities, make collect decisions, export results
-- **Instructor** (`instructor/`) – build/edit scenarios, review student results
+- **Student** (`student/`) – login, interactive map, click buildings, interact with entities, make collect decisions, export results as a `.js` file
+- **Instructor** (`instructor/`) – manage building entities/collection items, auto-load and evaluate student submissions
 
-No external libraries. No frameworks. No server required.
+No external libraries. No frameworks. No server required — works under `file://` and HTTP equally.
 
 ## How to Run
 
@@ -18,16 +18,18 @@ Optional server (for development): `python -m http.server 8000` from project roo
 
 ```
 335trs-scenario-scaffold/
-├── assets/maps/           SVG map files
+├── assets/maps/                SVG map files
 ├── data/
-│   ├── scenario.js        Active scenario (window.SCENARIO_DATA global)
-│   └── sample-scenario.json  Archive/reference only
+│   ├── scenario.js             Active scenario (window.SCENARIO_DATA global)
+│   └── sample-scenario.json   Archive/reference only — not loaded by app
+├── docs/
+│   └── buildings.xlsx          Building registry (source of truth for bounds)
 ├── shared/
-│   ├── css/base.css       Design system, shared component styles
+│   ├── css/base.css            Design system, shared component styles
 │   └── js/
-│       ├── scenarioLoader.js  Reads window.SCENARIO_DATA
-│       ├── modal.js           openModal({ title, body, actions })
-│       └── jsonUtils.js       downloadJson(), readJsonFile()
+│       ├── scenarioLoader.js   Reads window.SCENARIO_DATA
+│       ├── modal.js            openModal({ title, body, actions })
+│       └── jsonUtils.js        downloadJson(), readJsonFile()
 ├── student/
 │   ├── index.html
 │   ├── styles.css
@@ -35,12 +37,15 @@ Optional server (for development): `python -m http.server 8000` from project roo
 └── instructor/
     ├── index.html
     ├── styles.css
-    └── js/instructorApp.js
+    ├── js/instructorApp.js
+    └── submissions/
+        ├── index.js            Submission manifest — instructor edits this
+        └── *.js                Individual student submission files
 ```
 
 ## Scenario Data (data/scenario.js)
 
-The scenario is a global JS variable — not a fetched JSON file — so it works under `file://` without a server.
+The scenario is a global JS variable loaded via `<script>` tag — not a fetched JSON file.
 
 ```js
 window.SCENARIO_DATA = { /* scenario object */ };
@@ -62,13 +67,13 @@ window.SCENARIO_DATA = { /* scenario object */ };
       "bounds": { "x": number, "y": number, "width": number, "height": number },
       "entities": [
         {
-          "id": "string",
+          "id": "string (entity-XXX)",
           "type": "person | section | organization",
           "name": "string",
           "description": "string",
           "collectionItems": [
             {
-              "id": "string",
+              "id": "string (item-XXX)",
               "title": "string",
               "content": "string",
               "correctDecision": "collect | doNotCollect",
@@ -84,36 +89,70 @@ window.SCENARIO_DATA = { /* scenario object */ };
 
 - `bounds` values are percentages (0–100) for CSS `left`, `top`, `width`, `height`
 - Max **5 collection items per entity**
-- IDs follow pattern: `bldg-XXX`, `entity-XXX`, `item-XXX`
+- Building id, name, description, and bounds are **programmer-only** — set directly in `data/scenario.js`
+- Instructors manage entities and collection items only, via the instructor UI
 
-## Student Results Schema
+## Student Submission Format
 
-Exported as `student-results.json`:
+Students log in with their name before the scenario begins. Submissions export as `.js` files:
 
-```json
-{
-  "scenarioId": "string",
-  "exportedAt": "ISO timestamp",
+**Filename:** `YYYYMMDD_HHMMSS_First_Last.js` (e.g. `20260427_143022_John_Smith.js`)
+
+**File content:**
+```js
+window.STUDENT_SUBMISSIONS = window.STUDENT_SUBMISSIONS || [];
+window.STUDENT_SUBMISSIONS.push({
+  "studentName": "John Smith",
+  "submittedAt": "ISO timestamp",
+  "scenarioId": "scenario-001",
   "decisions": [
     {
-      "buildingId": "string",
-      "entityId": "string",
-      "itemId": "string",
+      "buildingId": "bldg-001",
+      "entityId": "entity-001",
+      "itemId": "item-001",
       "decision": "collect | doNotCollect",
       "timestamp": "ISO timestamp"
     }
   ]
-}
+});
+```
+
+## Instructor Submission Workflow
+
+1. Receive student `.js` file
+2. Copy it into `instructor/submissions/`
+3. Open `instructor/submissions/index.js`, add the filename to `window.SUBMISSION_MANIFEST`, save
+4. Open `instructor/index.html` → Student Evaluation tab — all submissions load automatically
+
+## Script Load Order
+
+**student/index.html:**
+```
+data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → student/js/studentApp.js
+```
+
+**instructor/index.html:**
+```
+data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shared/js/jsonUtils.js
+→ instructor/submissions/index.js → instructor/js/instructorApp.js
 ```
 
 ## Development Guardrails
 
-- No external libraries (check all `<script>` tags after any change)
-- **No ES modules** — do not use `import`/`export` or `<script type="module">`. Chrome blocks module imports under `file://`. All shared utilities expose globals on `window` and are loaded as plain `<script>` tags.
-- Script load order in HTML: `scenario.js` → `scenarioLoader.js` → `modal.js` → `jsonUtils.js` → app script
-- All content must come from `window.SCENARIO_DATA` — never hardcode building names or entity data
+- **No external libraries** — check all `<script>` tags after any change
+- **No ES modules** — do not use `import`/`export` or `<script type="module">`. Chrome blocks module imports under `file://`. All shared utilities expose globals on `window` and load as plain `<script>` tags.
+- **Buildings are static** — id, name, description, bounds are programmer-only; set in `data/scenario.js`. Do not add instructor UI for these fields.
+- All scenario content must come from `window.SCENARIO_DATA` — never hardcode building names or entity data
 - Do not replace or modify the SVG map at `assets/maps/base-map-placeholder.svg`
 - Make small, testable changes — verify in browser after each step
-- Do not add authentication
-- Do not add real student PII
+- Do not add real student PII beyond the name field
 - Maintain the existing folder structure
+
+## Known Dev Tool
+
+`studentApp.js` contains `initCoordTool()` (currently commented out in `startScenario()`). Uncomment the call when placing building bounds, remove when done.
+
+## Planned Next Work
+
+- Redesign instructor Student Evaluation section to handle multiple submissions better (per-building breakdown view)
+- Redesign instructor Buildings section for a clearer building-by-building evaluation layout

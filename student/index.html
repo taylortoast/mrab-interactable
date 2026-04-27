@@ -8,6 +8,17 @@
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
+
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <p class="eyebrow">335th Training Squadron</p>
+      <h2>Scenario Login</h2>
+      <p class="muted">Enter your full name to begin.</p>
+      <label>Full Name <input id="studentNameInput" type="text" placeholder="First Last" autocomplete="name" /></label>
+      <button id="beginScenarioBtn" class="primary-btn">Begin Scenario</button>
+    </div>
+  </div>
+
   <header class="app-header">
     <div>
       <p class="eyebrow">335th Training Squadron</p>
@@ -27,6 +38,7 @@
     <aside class="status-panel">
       <h2>Scenario Status</h2>
       <p id="scenarioTitle">Loading scenario...</p>
+      <p id="studentNameDisplay" class="muted"></p>
       <div id="collectionSummary" class="summary-card">No decisions recorded.</div>
     </aside>
   </main>
