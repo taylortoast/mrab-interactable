@@ -1,0 +1,36 @@
+window.SCENARIO_DATA = {
+  "id": "scenario-001",
+  "title": "335 TRS Sample Interactive Scenario",
+  "description": "Initial scaffold scenario used to verify local loading, building markers, and modal foundation.",
+  "mapImage": "../assets/maps/base-map-placeholder.svg",
+  "buildings": [
+    {
+      "id": "bldg-001",
+      "name": "Operations Building",
+      "description": "A sample building marker used for the first modal interaction.",
+      "bounds": {
+        "x": 18,
+        "y": 24,
+        "width": 18,
+        "height": 12
+      },
+      "entities": [
+        {
+          "id": "entity-001",
+          "type": "person",
+          "name": "Training Manager",
+          "description": "Provides initial tasking information.",
+          "collectionItems": [
+            {
+              "id": "item-001",
+              "title": "Schedule Conflict",
+              "content": "The schedule has a conflict with another training event.",
+              "correctDecision": "collect",
+              "feedback": "This should be collected because it affects mission planning."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+};

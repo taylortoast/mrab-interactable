@@ -14,26 +14,49 @@
       <h1>Scenario Builder</h1>
     </div>
     <div class="button-row">
-      <label class="secondary-btn">Import JSON <input id="importScenarioInput" type="file" accept="application/json" hidden /></label>
+      <label class="secondary-btn">Import Scenario <input id="importScenarioInput" type="file" accept=".js,application/javascript,application/json" hidden /></label>
       <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
     </div>
   </header>
 
   <main class="builder-layout">
-    <section class="builder-panel">
-      <h2>Scenario Foundation</h2>
-      <label>Scenario Title <input id="scenarioTitleInput" type="text" /></label>
-      <label>Description <textarea id="scenarioDescriptionInput"></textarea></label>
-      <button id="addBuildingBtn" class="secondary-btn">Add Building</button>
-    </section>
 
-    <section class="builder-panel">
+    <div class="builder-left">
+      <section class="builder-panel">
+        <h2>Scenario Foundation</h2>
+        <label>Scenario Title <input id="scenarioTitleInput" type="text" /></label>
+        <label>Description <textarea id="scenarioDescriptionInput"></textarea></label>
+      </section>
+
+      <section class="builder-panel">
+        <div class="section-header">
+          <h2>Buildings</h2>
+          <button id="addBuildingBtn" class="secondary-btn">+ Add Building</button>
+        </div>
+        <div id="buildingList" class="building-list"></div>
+      </section>
+
+      <section class="builder-panel">
+        <h2>Student Evaluation</h2>
+        <p class="muted">Load a student results file to review decisions.</p>
+        <label class="secondary-btn">Load Results <input id="importResultsInput" type="file" accept="application/json" hidden /></label>
+        <div id="evaluationOutput" class="evaluation-output"></div>
+      </section>
+    </div>
+
+    <section class="builder-panel preview-panel">
       <h2>Current Scenario JSON</h2>
       <pre id="scenarioPreview" class="json-preview"></pre>
     </section>
+
   </main>
 
   <div id="modalRoot"></div>
-  <script type="module" src="./js/instructorApp.js"></script>
+
+  <script src="../data/scenario.js"></script>
+  <script src="../shared/js/scenarioLoader.js"></script>
+  <script src="../shared/js/modal.js"></script>
+  <script src="../shared/js/jsonUtils.js"></script>
+  <script src="./js/instructorApp.js"></script>
 </body>
 </html>

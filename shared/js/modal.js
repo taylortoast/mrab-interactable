@@ -1,4 +1,4 @@
-export function openModal({ title, body, actions = [] }) {
+window.openModal = function ({ title, body, actions = [] }) {
   const root = document.querySelector('#modalRoot');
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
@@ -38,4 +38,4 @@ export function openModal({ title, body, actions = [] }) {
     document.removeEventListener('keydown', handleEscape);
     node.remove();
   }
-}
+};

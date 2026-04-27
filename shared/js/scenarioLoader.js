@@ -1,7 +1,6 @@
-export async function loadScenario(path) {
-  const response = await fetch(path);
-  if (!response.ok) {
-    throw new Error(`Unable to load scenario: ${path}`);
+window.loadScenario = function () {
+  if (!window.SCENARIO_DATA) {
+    throw new Error('SCENARIO_DATA not found. Ensure data/scenario.js is loaded before this script.');
   }
-  return response.json();
-}
+  return window.SCENARIO_DATA;
+};
