@@ -13,8 +13,12 @@
   box-shadow: var(--shadow);
 }
 
-.map-panel { padding: 1rem; }
-.status-panel { padding: 1.6rem; }
+.map-panel {
+  padding: 1rem;
+}
+.status-panel {
+  padding: 1.6rem;
+}
 
 .map-container {
   position: relative;
@@ -34,9 +38,9 @@
 
 .building-marker {
   position: absolute;
-  border: 2px solid var(--accent);
-  background: rgba(80, 160, 255, 0.16);
-  color: #fff;
+  border: 2px solid rgba(80, 160, 255);
+  background: rgba(80, 160, 255, 0);
+  color: rgba(80, 160, 255, 0);
   font-weight: 700;
   cursor: pointer;
 }
