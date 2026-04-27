@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>335 TRS Interactive Scenario - Student</title>
+  <link rel="stylesheet" href="../shared/css/base.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">335th Training Squadron</p>
+      <h1>Interactive Scenario Environment</h1>
+    </div>
+    <button id="submitResultsBtn" class="primary-btn">Submit Results</button>
+  </header>
+
+  <main class="student-layout">
+    <section class="map-panel" aria-label="Interactive base map">
+      <div id="mapContainer" class="map-container">
+        <img id="baseMap" src="../assets/maps/base-map-placeholder.svg" alt="Training base map" />
+        <div id="buildingLayer" class="building-layer"></div>
+      </div>
+    </section>
+
+    <aside class="status-panel">
+      <h2>Scenario Status</h2>
+      <p id="scenarioTitle">Loading scenario...</p>
+      <div id="collectionSummary" class="summary-card">No decisions recorded.</div>
+    </aside>
+  </main>
+
+  <div id="modalRoot"></div>
+
+  <script type="module" src="./js/studentApp.js"></script>
+</body>
+</html>

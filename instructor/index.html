@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>335 TRS Scenario Builder - Instructor</title>
+  <link rel="stylesheet" href="../shared/css/base.css" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Instructor/Admin</p>
+      <h1>Scenario Builder</h1>
+    </div>
+    <div class="button-row">
+      <label class="secondary-btn">Import JSON <input id="importScenarioInput" type="file" accept="application/json" hidden /></label>
+      <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
+    </div>
+  </header>
+
+  <main class="builder-layout">
+    <section class="builder-panel">
+      <h2>Scenario Foundation</h2>
+      <label>Scenario Title <input id="scenarioTitleInput" type="text" /></label>
+      <label>Description <textarea id="scenarioDescriptionInput"></textarea></label>
+      <button id="addBuildingBtn" class="secondary-btn">Add Building</button>
+    </section>
+
+    <section class="builder-panel">
+      <h2>Current Scenario JSON</h2>
+      <pre id="scenarioPreview" class="json-preview"></pre>
+    </section>
+  </main>
+
+  <div id="modalRoot"></div>
+  <script type="module" src="./js/instructorApp.js"></script>
+</body>
+</html>

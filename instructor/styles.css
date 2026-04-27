@@ -1,0 +1,41 @@
+.builder-layout {
+  display: grid;
+  grid-template-columns: 36rem minmax(0, 1fr);
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.builder-panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 1.2rem;
+  padding: 1.6rem;
+  box-shadow: var(--shadow);
+}
+
+label {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-weight: 700;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.8rem;
+  border-radius: 0.6rem;
+  border: 1px solid var(--border);
+  background: var(--panel-dark);
+  color: var(--text);
+}
+
+textarea { min-height: 10rem; }
+
+.json-preview {
+  min-height: 42rem;
+  overflow: auto;
+  background: #09111f;
+  padding: 1rem;
+  border-radius: 0.8rem;
+}
