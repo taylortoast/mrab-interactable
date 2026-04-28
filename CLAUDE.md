@@ -3,8 +3,8 @@
 ## What This Is
 
 A local HTML/CSS/JS training tool for the 335th Training Squadron. Two websites:
-- **Student** (`student/`) – login, interactive map, click buildings, interact with entities, make collect decisions, export results as a `.js` file
-- **Instructor** (`instructor/`) – manage building entities/collection items, auto-load and evaluate student submissions
+- **Student** (`student/`) – login, interactive map, click buildings, interact with entities, make collect decisions, export results as a `.json` file
+- **Instructor** (`instructor/`) – manage building entities/collection items, import student `.json` result files and evaluate them
 
 No external libraries. No frameworks. No server required — works under `file://` and HTTP equally.
 
@@ -35,10 +35,7 @@ Optional server (for development): `python -m http.server 8000` from project roo
 └── instructor/
     ├── index.html
     ├── styles.css
-    ├── js/instructorApp.js
-    └── submissions/
-        ├── index.js            Submission manifest — instructor edits this
-        └── *.js                Individual student submission files
+    └── js/instructorApp.js
 ```
 
 ## Scenario Data (data/scenario.js)
@@ -92,17 +89,17 @@ window.SCENARIO_DATA = { /* scenario object */ };
 
 ## Student Submission Format
 
-Students log in with their name before the scenario begins. Submissions export as `.js` files:
+Students log in with their name before the scenario begins. Submissions export as plain `.json` files:
 
-**Filename:** `YYYYMMDD_HHMMSS_First_Last.js` (e.g. `20260427_143022_John_Smith.js`)
+**Filename:** `YYYYMMDD_HHMMSS_First_Last_results.json` (e.g. `20260427_143022_John_Smith_results.json`)
 
 **File content:**
-```js
-window.STUDENT_SUBMISSIONS = window.STUDENT_SUBMISSIONS || [];
-window.STUDENT_SUBMISSIONS.push({
+```json
+{
   "studentName": "John Smith",
   "submittedAt": "ISO timestamp",
   "scenarioId": "scenario-001",
+  "scenarioTitle": "335 TRS Sample Interactive Scenario",
   "decisions": [
     {
       "buildingId": "bldg-001",
@@ -112,15 +109,14 @@ window.STUDENT_SUBMISSIONS.push({
       "timestamp": "ISO timestamp"
     }
   ]
-});
+}
 ```
 
 ## Instructor Submission Workflow
 
-1. Receive student `.js` file
-2. Copy it into `instructor/submissions/`
-3. Open `instructor/submissions/index.js`, add the filename to `window.SUBMISSION_MANIFEST`, save
-4. Open `instructor/index.html` → Student Evaluation tab — all submissions load automatically
+1. Receive student `.json` result file
+2. Open `instructor/index.html` → Student Evaluation tab
+3. Click **Choose Result Files**, select one or more `.json` files — loaded students appear in the left panel immediately
 
 ## Script Load Order
 
@@ -132,7 +128,7 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → stud
 **instructor/index.html:**
 ```
 data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shared/js/jsonUtils.js
-→ instructor/submissions/index.js → instructor/js/instructorApp.js
+→ instructor/js/instructorApp.js
 ```
 
 ## Development Guardrails
@@ -152,5 +148,4 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shar
 
 ## Planned Next Work
 
-- Redesign instructor Student Evaluation section to handle multiple submissions better (per-building breakdown view)
 - Redesign instructor Buildings section for a clearer building-by-building evaluation layout

@@ -40,10 +40,7 @@ Then open:
 └── instructor/
     ├── index.html
     ├── styles.css
-    ├── js/instructorApp.js
-    └── submissions/
-        ├── index.js            Submission manifest — instructor edits this
-        └── *.js                Individual student submission files
+    └── js/instructorApp.js
 ```
 
 ## How It Works
@@ -55,9 +52,9 @@ Then open:
 3. Click buildings on the map to open them
 4. Interact with entities (people, sections, organizations) inside each building
 5. Review collection items and decide: **Collect** or **Do Not Collect**
-6. Export your decisions as a `.js` file when finished
+6. Click **Submit Results** to export your decisions as a `.json` file
 
-Submission filenames follow this pattern: `YYYYMMDD_HHMMSS_First_Last.js`
+Submission filenames follow this pattern: `YYYYMMDD_HHMMSS_First_Last_results.json`
 
 ### Instructor Flow — Managing Scenario Content
 
@@ -71,10 +68,9 @@ Open `instructor/index.html` and use the **Buildings** tab to:
 
 ### Instructor Flow — Evaluating Student Submissions
 
-1. Receive the student's `.js` file
-2. Copy it into `instructor/submissions/`
-3. Open `instructor/submissions/index.js` and add the filename to `window.SUBMISSION_MANIFEST`
-4. Open `instructor/index.html` → **Student Evaluation** tab — all listed submissions load automatically
+1. Open `instructor/index.html` → **Student Evaluation** tab
+2. Click **Choose Result Files** and select one or more student `.json` result files
+3. Loaded students appear in the left panel — click a name to view their full evaluation
 
 ## Scenario Data
 
@@ -106,7 +102,7 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → stud
 **instructor/index.html:**
 ```
 data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shared/js/jsonUtils.js
-→ instructor/submissions/index.js → instructor/js/instructorApp.js
+→ instructor/js/instructorApp.js
 ```
 
 ## Development Notes
