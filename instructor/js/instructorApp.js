@@ -117,6 +117,7 @@
         const dl = item.correctDecision === 'collect' ? 'Collect' : 'No Collect';
         return `
           <div class="entity-item-row" data-item-id="${item.id}">
+            ${item.image ? `<img src="${escHtml(item.image)}" class="item-thumbnail" alt="" />` : ''}
             <span class="entity-item-title">${escHtml(item.title)}</span>
             <div class="row-actions">
               <span class="entity-item-decision ${dc}">${dl}</span>
@@ -135,7 +136,10 @@
            </div>
            ${renderInlineEntityFields(entity)}`
         : `<div class="entity-card-header">
-             <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
+             <div class="entity-name-group">
+               ${entity.image ? `<img src="${escHtml(entity.image)}" class="entity-thumbnail" alt="" />` : ''}
+               <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
+             </div>
              <div class="row-actions">
                ${!em ? `<button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>` : ''}
                ${!em ? `<button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>` : ''}
@@ -184,6 +188,10 @@
     const name = existing ? escHtml(existing.name) : '';
     const desc = existing ? escHtml(existing.description) : '';
     const type = existing?.type || 'person';
+    const imgSrc = existing?.image || '';
+    const imgPreview = imgSrc
+      ? `<div id="ef-img-preview" class="inline-img-preview"><img src="${escHtml(imgSrc)}" class="inline-img-preview-img" alt="" /></div>`
+      : `<div id="ef-img-preview" class="inline-img-preview" style="display:none;"></div>`;
     return `
       <div class="inline-form-fields">
         <input id="ef-name" class="inline-input" type="text" placeholder="Contact name" value="${name}" />
@@ -193,6 +201,18 @@
           <option value="organization" ${type === 'organization' ? 'selected' : ''}>Organization</option>
         </select>
         <textarea id="ef-desc" class="inline-textarea" placeholder="Description">${desc}</textarea>
+        <div class="inline-img-field">
+          <span class="inline-form-sublabel">Image (optional)</span>
+          ${imgPreview}
+          <input type="hidden" id="ef-img-data" value="${escHtml(imgSrc)}" />
+          <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+            <label class="inline-file-label secondary-btn btn-sm">
+              <span id="ef-img-btn-text">${imgSrc ? 'Change Image' : 'Select Image'}</span>
+              <input type="file" id="ef-img-file" accept="image/*" style="display:none;" />
+            </label>
+            ${imgSrc ? '<button id="ef-img-clear" class="secondary-btn btn-sm danger">Remove</button>' : ''}
+          </div>
+        </div>
       </div>
       <div class="inline-form-actions">
         <button id="ef-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Contact'}</button>
@@ -205,6 +225,10 @@
     const content = existing ? escHtml(existing.content) : '';
     const decision = existing?.correctDecision || 'collect';
     const feedback = existing ? escHtml(existing.feedback) : '';
+    const imgSrc = existing?.image || '';
+    const imgPreview = imgSrc
+      ? `<div id="if-img-preview" class="inline-img-preview"><img src="${escHtml(imgSrc)}" class="inline-img-preview-img" alt="" /></div>`
+      : `<div id="if-img-preview" class="inline-img-preview" style="display:none;"></div>`;
     return `
       <div class="inline-form-fields">
         <input id="if-title" class="inline-input" type="text" placeholder="Item title" value="${title}" />
@@ -214,6 +238,18 @@
           <option value="doNotCollect" ${decision === 'doNotCollect' ? 'selected' : ''}>Do Not Collect</option>
         </select>
         <textarea id="if-feedback" class="inline-textarea" placeholder="Instructor feedback (shown after decision)">${feedback}</textarea>
+        <div class="inline-img-field">
+          <span class="inline-form-sublabel">Image (optional)</span>
+          ${imgPreview}
+          <input type="hidden" id="if-img-data" value="${escHtml(imgSrc)}" />
+          <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+            <label class="inline-file-label secondary-btn btn-sm">
+              <span id="if-img-btn-text">${imgSrc ? 'Change Image' : 'Select Image'}</span>
+              <input type="file" id="if-img-file" accept="image/*" style="display:none;" />
+            </label>
+            ${imgSrc ? '<button id="if-img-clear" class="secondary-btn btn-sm danger">Remove</button>' : ''}
+          </div>
+        </div>
       </div>
       <div class="inline-form-actions">
         <button id="if-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Item'}</button>
@@ -273,17 +309,66 @@
       });
     });
 
+    document.querySelector('#ef-img-file')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.querySelector('#ef-img-data').value = reader.result;
+        const preview = document.querySelector('#ef-img-preview');
+        preview.style.display = '';
+        preview.innerHTML = `<img src="${escHtml(reader.result)}" class="inline-img-preview-img" alt="" />`;
+        const btnText = document.querySelector('#ef-img-btn-text');
+        if (btnText) btnText.textContent = 'Change Image';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelector('#ef-img-clear')?.addEventListener('click', () => {
+      document.querySelector('#ef-img-data').value = '';
+      const preview = document.querySelector('#ef-img-preview');
+      preview.style.display = 'none';
+      preview.innerHTML = '';
+      const btnText = document.querySelector('#ef-img-btn-text');
+      if (btnText) btnText.textContent = 'Select Image';
+    });
+
+    document.querySelector('#if-img-file')?.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.querySelector('#if-img-data').value = reader.result;
+        const preview = document.querySelector('#if-img-preview');
+        preview.style.display = '';
+        preview.innerHTML = `<img src="${escHtml(reader.result)}" class="inline-img-preview-img" alt="" />`;
+        const btnText = document.querySelector('#if-img-btn-text');
+        if (btnText) btnText.textContent = 'Change Image';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.querySelector('#if-img-clear')?.addEventListener('click', () => {
+      document.querySelector('#if-img-data').value = '';
+      const preview = document.querySelector('#if-img-preview');
+      preview.style.display = 'none';
+      preview.innerHTML = '';
+      const btnText = document.querySelector('#if-img-btn-text');
+      if (btnText) btnText.textContent = 'Select Image';
+    });
+
     document.querySelector('#ef-save')?.addEventListener('click', () => {
       const em = buildingState.editMode;
       const name = document.querySelector('#ef-name').value.trim();
       if (!name) { alert('Contact name is required.'); return; }
       const type = document.querySelector('#ef-type').value;
       const description = document.querySelector('#ef-desc').value.trim();
+      const image = document.querySelector('#ef-img-data')?.value || '';
       if (em.entityId === null) {
-        building.entities.push({ id: 'entity-' + Date.now(), type, name, description, collectionItems: [] });
+        building.entities.push({ id: 'entity-' + Date.now(), type, name, description, image, collectionItems: [] });
       } else {
         const entity = building.entities.find((e) => e.id === em.entityId);
-        if (entity) { entity.name = name; entity.type = type; entity.description = description; }
+        if (entity) { entity.name = name; entity.type = type; entity.description = description; entity.image = image; }
       }
       syncBuildingToScenario(building);
       buildingState.editMode = null;
@@ -302,6 +387,7 @@
       if (!entity) return;
       const title = document.querySelector('#if-title').value.trim();
       if (!title) { alert('Item title is required.'); return; }
+      const image = document.querySelector('#if-img-data')?.value || '';
       if (em.itemId === null) {
         if (entity.collectionItems.length >= MAX_ITEMS) {
           alert('Maximum of ' + MAX_ITEMS + ' collection items per contact.');
@@ -312,7 +398,8 @@
           title,
           content: document.querySelector('#if-content').value.trim(),
           correctDecision: document.querySelector('#if-decision').value,
-          feedback: document.querySelector('#if-feedback').value.trim()
+          feedback: document.querySelector('#if-feedback').value.trim(),
+          image
         });
       } else {
         const item = entity.collectionItems.find((i) => i.id === em.itemId);
@@ -321,6 +408,7 @@
           item.content = document.querySelector('#if-content').value.trim();
           item.correctDecision = document.querySelector('#if-decision').value;
           item.feedback = document.querySelector('#if-feedback').value.trim();
+          item.image = image;
         }
       }
       syncEntityToBuilding(building, entity);

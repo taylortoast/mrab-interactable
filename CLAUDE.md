@@ -66,13 +66,15 @@ window.SCENARIO_DATA = { /* scenario object */ };
           "type": "person | section | organization",
           "name": "string",
           "description": "string",
+          "image": "string (base64 data URL or empty string)",
           "collectionItems": [
             {
               "id": "string (item-XXX)",
               "title": "string",
               "content": "string",
               "correctDecision": "collect | doNotCollect",
-              "feedback": "string"
+              "feedback": "string",
+              "image": "string (base64 data URL or empty string)"
             }
           ]
         }
@@ -152,4 +154,6 @@ The Buildings tab uses a two-column layout (mirroring the Student Evaluation tab
 - **Left sidebar** (`#buildingList`, `.buildings-list-panel`) — clickable list of all buildings; first building auto-selected on load
 - **Right panel** (`#buildingDetail`, `.building-detail-panel`) — selected building's contacts (entities) and their collection items displayed inline with Collect/No Collect decision badges
 
-Entity and item editing still opens modals (forms need them). After any save or delete the inline panel refreshes automatically — no modal re-open. The old `openBuildingPanel` / `renderEntitySection` / modal-chain flow has been removed.
+All entity and item editing is fully inline — no modals. Forms render directly in the right panel via `buildingState.editMode`. After any save or delete the panel re-renders automatically. The old modal-chain flow (`openBuildingPanel`, `renderEntitySection`, etc.) has been removed.
+
+Entities and items both support an optional `image` field (base64 data URL). The instructor can select an image file in the inline edit form; the data URL is stored in the scenario. Thumbnails appear next to entity names and item rows in view mode. Images are intended for display in the student modal (not yet implemented on the student side).

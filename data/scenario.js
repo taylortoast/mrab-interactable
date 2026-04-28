@@ -20,27 +20,31 @@ window.SCENARIO_DATA = {
           "type": "person",
           "name": "Training Manager",
           "description": "Provides initial tasking information.",
+          "image": "",
           "collectionItems": [
             {
               "id": "item-001",
               "title": "Schedule Conflict",
               "content": "The schedule has a conflict with another training event.",
               "correctDecision": "collect",
-              "feedback": "This should be collected because it affects mission planning."
+              "feedback": "This should be collected because it affects mission planning.",
+              "image": ""
             },
             {
               "id": "item-1777319164067",
               "title": "Ring",
               "content": "This is gold",
               "correctDecision": "doNotCollect",
-              "feedback": "Not collectalbe as the is a ring."
+              "feedback": "Not collectalbe as the is a ring.",
+              "image": ""
             },
             {
               "id": "item-1777319212725",
               "title": "Water",
               "content": "This is collectable water",
               "correctDecision": "collect",
-              "feedback": "Collect this item."
+              "feedback": "Collect this item.",
+              "image": ""
             }
           ]
         }
