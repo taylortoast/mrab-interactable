@@ -1,0 +1,14 @@
+# Raw project source materials — not part of the codebase
+docs/raw-project-materials/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor directories
+.vscode/
+.idea/
+
+# Logs
+*.log
