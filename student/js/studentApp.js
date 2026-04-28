@@ -66,22 +66,29 @@
   }
 
   function openBuildingModal(building) {
-    const entityButtons = building.entities.map((entity) => {
-      const typeLabel = { person: 'Person', section: 'Section', organization: 'Organization' }[entity.type] || entity.type;
-      return `<button class="entity-btn secondary-btn" data-entity-id="${entity.id}">${entity.name} <span class="entity-type-badge">${typeLabel}</span></button>`;
+    const entityRows = building.entities.map((entity) => {
+      const thumbHtml = entity.image
+        ? `<img src="${entity.image}" class="entity-row-thumb" alt="" />`
+        : `<span class="entity-row-thumb-placeholder">?</span>`;
+      return `
+        <button class="entity-row" data-entity-id="${entity.id}">
+          ${thumbHtml}
+          <span class="entity-row-arrow">&#9658;</span>
+          <span class="entity-row-name">${entity.name}</span>
+        </button>`;
     }).join('');
 
     openModal({
-      title: building.name,
+      title: `[ ${building.name} ]`,
       body: `
         <p>${building.description}</p>
-        <p class="muted">Select a contact to speak with:</p>
-        <div class="entity-list">${entityButtons || '<p class="muted">No contacts available.</p>'}</div>
+        <p class="muted">Select who you want to engage:</p>
+        <div class="entity-list">${entityRows || '<p class="muted">No contacts available.</p>'}</div>
       `,
       actions: [{ label: 'Close', role: 'close' }]
     });
 
-    document.querySelectorAll('.entity-btn').forEach((btn) => {
+    document.querySelectorAll('.entity-row').forEach((btn) => {
       btn.addEventListener('click', () => {
         const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
         if (entity) openEntityModal(building, entity);
@@ -90,19 +97,28 @@
   }
 
   function openEntityModal(building, entity) {
-    const itemButtons = entity.collectionItems.map((item) => {
-      return `<button class="item-btn secondary-btn" data-item-id="${item.id}">${item.title}</button>`;
-    }).join('');
+    const colImg = entity.image
+      ? `<img src="${entity.image}" alt="" />`
+      : `<div class="modal-col-img-placeholder">?</div>`;
+
+    const itemButtons = entity.collectionItems.map((item) =>
+      `<button class="item-btn secondary-btn" data-item-id="${item.id}">${item.title}</button>`
+    ).join('');
 
     openModal({
-      title: entity.name,
+      title: `${entity.type.toUpperCase()} – ${entity.name.toUpperCase()}`,
       body: `
-        <p class="entity-type-badge">${entity.type}</p>
-        <p>${entity.description}</p>
-        <p class="muted">Select information to review:</p>
-        <div class="item-list">${itemButtons || '<p class="muted">No information available.</p>'}</div>
+        <div class="modal-two-col">
+          <div class="modal-col-img">${colImg}</div>
+          <div class="modal-col-content">
+            <p>${entity.description}</p>
+            <p class="modal-detail-prompt">What do you want to ask?</p>
+            <div class="item-list">${itemButtons || '<p class="muted">No information available.</p>'}</div>
+          </div>
+        </div>
       `,
-      actions: [{ label: 'Back', role: 'close', onClick: () => openBuildingModal(building) }]
+      actions: [{ label: 'Back', role: 'close', onClick: () => openBuildingModal(building) }],
+      cardClass: 'modal-wide'
     });
 
     document.querySelectorAll('.item-btn').forEach((btn) => {
@@ -118,18 +134,28 @@
       (d) => d.buildingId === building.id && d.entityId === entity.id && d.itemId === item.id
     );
 
+    const colImg = item.image
+      ? `<img src="${item.image}" alt="" />`
+      : `<div class="modal-col-img-placeholder">?</div>`;
+
     openModal({
       title: 'Review Information',
       body: `
-        <h3 class="item-content-title">${item.title}</h3>
-        <p>${item.content}</p>
-        ${alreadyDecided ? `<p class="muted decision-recorded">Decision recorded: <strong>${alreadyDecided.decision === 'collect' ? 'Collect' : 'Do Not Collect'}</strong></p>` : ''}
+        <div class="modal-two-col">
+          <div class="modal-col-img">${colImg}</div>
+          <div class="modal-col-content">
+            <h3 class="item-content-title">${item.title}</h3>
+            <p>${item.content}</p>
+            ${alreadyDecided ? `<p class="muted decision-recorded">Decision recorded: <strong>${alreadyDecided.decision === 'collect' ? 'Collect' : 'Do Not Collect'}</strong></p>` : ''}
+          </div>
+        </div>
       `,
       actions: [
         { label: 'Collect', role: 'primary', onClick: () => recordDecision(building, entity, item, 'collect'), closeOnClick: true },
         { label: 'Do Not Collect', role: 'secondary', onClick: () => recordDecision(building, entity, item, 'doNotCollect'), closeOnClick: true },
         { label: 'Back', role: 'close', onClick: () => openEntityModal(building, entity) }
-      ]
+      ],
+      cardClass: 'modal-wide'
     });
   }
 

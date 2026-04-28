@@ -1,9 +1,9 @@
-window.openModal = function ({ title, body, actions = [] }) {
+window.openModal = function ({ title, body, actions = [], cardClass = '' }) {
   const root = document.querySelector('#modalRoot');
   const backdrop = document.createElement('div');
   backdrop.className = 'modal-backdrop';
   backdrop.innerHTML = `
-    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
+    <section class="modal-card${cardClass ? ' ' + cardClass : ''}" role="dialog" aria-modal="true" aria-labelledby="modalTitle" tabindex="-1">
       <header class="modal-header"><h2 id="modalTitle">${title}</h2></header>
       <div class="modal-body">${body}</div>
       <footer class="modal-footer"></footer>

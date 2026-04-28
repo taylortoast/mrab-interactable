@@ -139,3 +139,82 @@
   padding: 1rem;
   font-size: 1.6rem;
 }
+
+/* ── Building modal entity rows ──────────────────────────────────────────── */
+
+.entity-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  padding: 1rem 1.2rem;
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+.entity-row:hover { border-color: var(--accent); }
+
+.entity-row-thumb {
+  width: 5.6rem;
+  height: 5.6rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  flex-shrink: 0;
+}
+.entity-row-thumb-placeholder {
+  width: 5.6rem;
+  height: 5.6rem;
+  flex-shrink: 0;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 2rem;
+}
+
+.entity-row-arrow { color: var(--accent); flex-shrink: 0; }
+.entity-row-name  { font-weight: 700; font-size: 1.6rem; text-transform: uppercase; }
+
+/* ── Two-column modal layout (entity detail + item review) ───────────────── */
+
+.modal-card.modal-wide { width: min(80rem, 100%); }
+
+.modal-two-col {
+  display: grid;
+  grid-template-columns: 16rem 1fr;
+  gap: 1.6rem;
+  align-items: start;
+}
+
+.modal-col-img img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 0.6rem;
+  display: block;
+}
+.modal-col-img-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 3.2rem;
+}
+
+.modal-detail-prompt {
+  font-size: 1.4rem;
+  color: var(--muted);
+  margin-top: 1rem;
+  margin-bottom: 0.6rem;
+}
