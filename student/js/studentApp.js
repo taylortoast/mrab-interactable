@@ -170,19 +170,19 @@
     const datePart = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
     const timePart = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
     const namePart = state.studentName.trim().replace(/\s+/g, '_');
-    const filename = `${datePart}_${timePart}_${namePart}.js`;
+    const filename = `${datePart}_${timePart}_${namePart}_results.json`;
 
     const payload = {
       studentName: state.studentName,
       submittedAt: now.toISOString(),
       scenarioId: state.scenario.id,
+      scenarioTitle: state.scenario.title,
       decisions: state.decisions
     };
 
-    const content = 'window.STUDENT_SUBMISSIONS = window.STUDENT_SUBMISSIONS || [];\n'
-      + 'window.STUDENT_SUBMISSIONS.push(' + JSON.stringify(payload, null, 2) + ');\n';
+    const content = JSON.stringify(payload, null, 2);
 
-    const blob = new Blob([content], { type: 'application/javascript' });
+    const blob = new Blob([content], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = filename;
