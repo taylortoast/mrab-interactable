@@ -9,9 +9,14 @@
     loadErrors: []
   };
 
+  const buildingState = {
+    selectedBuildingId: null
+  };
+
   const els = {
     exportBtn: document.querySelector('#exportScenarioBtn'),
     buildingList: document.querySelector('#buildingList'),
+    buildingDetail: document.querySelector('#buildingDetail'),
     evaluationOutput: document.querySelector('#evaluationOutput'),
     studentResultsInput: document.querySelector('#studentResultsInput'),
     studentResultsStatus: document.querySelector('#studentResultsStatus'),
@@ -24,6 +29,9 @@
     scenario = JSON.parse(JSON.stringify(loadScenario()));
     bindEvents();
     renderBuildingList();
+    if (scenario.buildings.length) {
+      selectBuilding(scenario.buildings[0]);
+    }
     initTabs();
   }
 
@@ -66,83 +74,119 @@
       return;
     }
     scenario.buildings.forEach((building) => {
-      const row = document.createElement('div');
-      row.className = 'building-row';
+      const btn = document.createElement('button');
+      btn.className = 'building-list-item' + (building.id === buildingState.selectedBuildingId ? ' active' : '');
       const entityCount = building.entities.length;
-      row.innerHTML = `
-        <span class="building-row-name">${building.name}
-          <span class="badge">${entityCount} contact${entityCount !== 1 ? 's' : ''}</span>
-        </span>
-        <button class="secondary-btn btn-sm" data-manage="${building.id}">Manage</button>
+      btn.innerHTML = `
+        <span class="building-list-item-name">${escHtml(building.name)}</span>
+        <span class="building-list-item-meta">${entityCount} contact${entityCount !== 1 ? 's' : ''}</span>
       `;
-      row.querySelector('[data-manage]').addEventListener('click', () => openBuildingPanel(building));
-      els.buildingList.appendChild(row);
+      btn.addEventListener('click', () => selectBuilding(building));
+      els.buildingList.appendChild(btn);
     });
   }
 
-  // ── Building panel ──────────────────────────────────────────────────────────
-
-  function openBuildingPanel(building) {
-    openModal({
-      title: building.name,
-      body: renderEntitySection(building),
-      actions: [{ label: 'Close', role: 'close' }]
-    });
-    bindEntityFormEvents(building);
+  function selectBuilding(building) {
+    buildingState.selectedBuildingId = building.id;
+    renderBuildingList();
+    renderBuildingDetail(building);
   }
 
-  // ── Entity section ──────────────────────────────────────────────────────────
+  // ── Building detail panel ───────────────────────────────────────────────────
 
-  function renderEntitySection(building) {
-    const rows = building.entities.map((entity) => `
-      <div class="entity-row" data-entity-id="${entity.id}">
-        <span>${entity.name} <span class="badge">${entity.type}</span></span>
-        <div class="row-actions">
-          <button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>
-          <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
+  function renderBuildingDetail(building) {
+    const entityCards = building.entities.map((entity) => {
+      const itemRows = entity.collectionItems.map((item) => {
+        const decisionClass = item.correctDecision === 'collect' ? 'decision-collect' : 'decision-no-collect';
+        const decisionLabel = item.correctDecision === 'collect' ? 'Collect' : 'No Collect';
+        return `
+          <div class="entity-item-row" data-item-id="${item.id}">
+            <span class="entity-item-title">${escHtml(item.title)}</span>
+            <div class="row-actions">
+              <span class="entity-item-decision ${decisionClass}">${decisionLabel}</span>
+              <button class="secondary-btn btn-sm" data-edit-item="${item.id}" data-entity-id="${entity.id}">Edit</button>
+              <button class="secondary-btn btn-sm danger" data-delete-item="${item.id}" data-entity-id="${entity.id}">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('') || '<p class="muted" style="font-size:0.85rem;margin:0.4rem 0;">No items yet.</p>';
+
+      const atMax = entity.collectionItems.length >= MAX_ITEMS;
+
+      return `
+        <div class="entity-card" data-entity-id="${entity.id}">
+          <div class="entity-card-header">
+            <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
+            <div class="row-actions">
+              <button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>
+              <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
+            </div>
+          </div>
+          <div class="entity-card-items">
+            <div class="section-header" style="margin-bottom:0.4rem;">
+              <span class="muted" style="font-size:0.8rem;">Items ${entity.collectionItems.length}/${MAX_ITEMS}</span>
+              <button class="secondary-btn btn-sm" data-add-item data-entity-id="${entity.id}" ${atMax ? 'disabled' : ''}>+ Add Item</button>
+            </div>
+            ${itemRows}
+          </div>
         </div>
-      </div>
-    `).join('');
+      `;
+    }).join('') || '<p class="muted">No contacts added yet.</p>';
 
-    return `
-      <div class="section-header">
-        <h3>Contacts / Entities</h3>
-        <button id="addEntityBtn" class="secondary-btn btn-sm">+ Add</button>
+    els.buildingDetail.innerHTML = `
+      <div class="building-detail-card">
+        <div class="building-detail-header">
+          <h3 class="building-detail-title">${escHtml(building.name)}</h3>
+          <button id="addEntityBtn" class="secondary-btn btn-sm">+ Add Contact</button>
+        </div>
+        ${entityCards}
       </div>
-      <div id="entityList">${rows || '<p class="muted">No contacts added yet.</p>'}</div>
     `;
+
+    bindBuildingDetailEvents(building);
   }
 
-  function bindEntityFormEvents(building) {
+  function bindBuildingDetailEvents(building) {
     document.querySelector('#addEntityBtn')?.addEventListener('click', () => openEntityForm(building, null));
+
     document.querySelectorAll('[data-edit-entity]').forEach((btn) => {
       const entity = building.entities.find((e) => e.id === btn.dataset.editEntity);
       if (entity) btn.addEventListener('click', () => openEntityForm(building, entity));
     });
+
     document.querySelectorAll('[data-delete-entity]').forEach((btn) => {
       btn.addEventListener('click', () => {
         if (!confirm('Delete this contact and all its collection items?')) return;
         building.entities = building.entities.filter((e) => e.id !== btn.dataset.deleteEntity);
         syncBuildingToScenario(building);
-        refreshEntityList(building);
         renderBuildingList();
+        renderBuildingDetail(building);
       });
     });
-  }
 
-  function refreshEntityList(building) {
-    const list = document.querySelector('#entityList');
-    if (!list) return;
-    list.innerHTML = building.entities.map((entity) => `
-      <div class="entity-row" data-entity-id="${entity.id}">
-        <span>${entity.name} <span class="badge">${entity.type}</span></span>
-        <div class="row-actions">
-          <button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>
-          <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
-        </div>
-      </div>
-    `).join('') || '<p class="muted">No contacts added yet.</p>';
-    bindEntityFormEvents(building);
+    document.querySelectorAll('[data-add-item]').forEach((btn) => {
+      const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
+      if (entity) btn.addEventListener('click', () => openItemForm(building, entity, null));
+    });
+
+    document.querySelectorAll('[data-edit-item]').forEach((btn) => {
+      const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
+      const item = entity?.collectionItems.find((i) => i.id === btn.dataset.editItem);
+      if (entity && item) btn.addEventListener('click', () => openItemForm(building, entity, item));
+    });
+
+    document.querySelectorAll('[data-delete-item]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Delete this collection item?')) return;
+        const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
+        if (!entity) return;
+        entity.collectionItems = entity.collectionItems.filter((i) => i.id !== btn.dataset.deleteItem);
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        renderBuildingList();
+        renderBuildingDetail(building);
+      });
+    });
   }
 
   // ── Entity form ─────────────────────────────────────────────────────────────
@@ -167,15 +211,12 @@
           </label>
           <label>Description <textarea id="ef-desc">${escHtml(entity.description)}</textarea></label>
         </div>
-        ${!isNew ? renderItemSection(entity) : ''}
       `,
       actions: [
         { label: isNew ? 'Add Contact' : 'Save Changes', role: 'primary', closeOnClick: false, onClick: () => saveEntityForm(building, entity, isNew) },
-        { label: 'Back to Building', role: 'close', onClick: () => openBuildingPanel(building) }
+        { label: 'Close', role: 'close' }
       ]
     });
-
-    if (!isNew) bindItemFormEvents(building, entity);
   }
 
   function saveEntityForm(building, entity, isNew) {
@@ -194,71 +235,9 @@
     }
 
     syncBuildingToScenario(building);
-    renderBuildingList();
     document.querySelector('.modal-backdrop')?.remove();
-    openBuildingPanel(building);
-  }
-
-  // ── Collection item section ─────────────────────────────────────────────────
-
-  function renderItemSection(entity) {
-    const rows = entity.collectionItems.map((item) => `
-      <div class="item-row" data-item-id="${item.id}">
-        <span>${item.title}</span>
-        <div class="row-actions">
-          <button class="secondary-btn btn-sm" data-edit-item="${item.id}">Edit</button>
-          <button class="secondary-btn btn-sm danger" data-delete-item="${item.id}">Delete</button>
-        </div>
-      </div>
-    `).join('');
-
-    const atMax = entity.collectionItems.length >= MAX_ITEMS;
-
-    return `
-      <hr class="section-divider" />
-      <div class="section-header">
-        <h3>Collection Items <span class="badge">${entity.collectionItems.length}/${MAX_ITEMS}</span></h3>
-        <button id="addItemBtn" class="secondary-btn btn-sm" ${atMax ? 'disabled' : ''}>+ Add</button>
-      </div>
-      ${atMax ? '<p class="muted">Maximum of 5 items reached.</p>' : ''}
-      <div id="itemList">${rows || '<p class="muted">No items added yet.</p>'}</div>
-    `;
-  }
-
-  function bindItemFormEvents(building, entity) {
-    document.querySelector('#addItemBtn')?.addEventListener('click', () => openItemForm(building, entity, null));
-    document.querySelectorAll('[data-edit-item]').forEach((btn) => {
-      const item = entity.collectionItems.find((i) => i.id === btn.dataset.editItem);
-      if (item) btn.addEventListener('click', () => openItemForm(building, entity, item));
-    });
-    document.querySelectorAll('[data-delete-item]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (!confirm('Delete this collection item?')) return;
-        entity.collectionItems = entity.collectionItems.filter((i) => i.id !== btn.dataset.deleteItem);
-        syncEntityToBuilding(building, entity);
-        syncBuildingToScenario(building);
-        refreshItemList(building, entity);
-      });
-    });
-  }
-
-  function refreshItemList(building, entity) {
-    const list = document.querySelector('#itemList');
-    if (!list) return;
-    list.innerHTML = entity.collectionItems.map((item) => `
-      <div class="item-row" data-item-id="${item.id}">
-        <span>${item.title}</span>
-        <div class="row-actions">
-          <button class="secondary-btn btn-sm" data-edit-item="${item.id}">Edit</button>
-          <button class="secondary-btn btn-sm danger" data-delete-item="${item.id}">Delete</button>
-        </div>
-      </div>
-    `).join('') || '<p class="muted">No items added yet.</p>';
-
-    const addBtn = document.querySelector('#addItemBtn');
-    if (addBtn) addBtn.disabled = entity.collectionItems.length >= MAX_ITEMS;
-
-    bindItemFormEvents(building, entity);
+    renderBuildingList();
+    renderBuildingDetail(building);
   }
 
   // ── Collection item form ────────────────────────────────────────────────────
@@ -286,7 +265,7 @@
       `,
       actions: [
         { label: isNew ? 'Add Item' : 'Save Changes', role: 'primary', closeOnClick: false, onClick: () => saveItemForm(building, entity, item, isNew) },
-        { label: 'Back to Contact', role: 'close', onClick: () => openEntityForm(building, entity) }
+        { label: 'Close', role: 'close' }
       ]
     });
   }
@@ -315,7 +294,8 @@
     syncEntityToBuilding(building, entity);
     syncBuildingToScenario(building);
     document.querySelector('.modal-backdrop')?.remove();
-    openEntityForm(building, entity);
+    renderBuildingList();
+    renderBuildingDetail(building);
   }
 
   // ── Student result import ───────────────────────────────────────────────────

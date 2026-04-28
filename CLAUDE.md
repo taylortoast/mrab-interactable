@@ -146,6 +146,10 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shar
 
 `studentApp.js` contains `initCoordTool()` (currently commented out in `startScenario()`). Uncomment the call when placing building bounds, remove when done.
 
-## Planned Next Work
+## Instructor Buildings Tab Layout
 
-- Redesign instructor Buildings section for a clearer building-by-building inline layout (two-column: buildings list left, entity/item detail right — mirrors evaluation tab pattern). Full plan: `docs/335TRS_Instructor_Buildings_Redesign_Plan.md`
+The Buildings tab uses a two-column layout (mirroring the Student Evaluation tab):
+- **Left sidebar** (`#buildingList`, `.buildings-list-panel`) — clickable list of all buildings; first building auto-selected on load
+- **Right panel** (`#buildingDetail`, `.building-detail-panel`) — selected building's contacts (entities) and their collection items displayed inline with Collect/No Collect decision badges
+
+Entity and item editing still opens modals (forms need them). After any save or delete the inline panel refreshes automatically — no modal re-open. The old `openBuildingPanel` / `renderEntitySection` / modal-chain flow has been removed.

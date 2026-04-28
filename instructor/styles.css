@@ -335,3 +335,130 @@ code {
   color: #fb0;
   margin-top: 0.2rem;
 }
+
+/* ── Buildings two-column layout ─────────────────────────────────────────── */
+
+.buildings-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  margin-top: 1.2rem;
+}
+
+.buildings-list-panel {
+  min-width: 16rem;
+  flex-shrink: 0;
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 1.2rem;
+}
+
+.building-detail-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+.building-list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.building-list-item:hover { background: #1a2d47; }
+
+.building-list-item.active {
+  border-left: 3px solid var(--accent);
+  background: #162233;
+}
+
+.building-list-item-name {
+  display: block;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.building-list-item-meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+/* ── Building detail panel ───────────────────────────────────────────────── */
+
+.building-detail-card {
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 1.4rem;
+}
+
+.building-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.building-detail-title { margin: 0; font-size: 1.4rem; }
+
+/* ── Inline entity cards ─────────────────────────────────────────────────── */
+
+.entity-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.8rem;
+}
+
+.entity-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+}
+
+.entity-card-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.entity-card-items {
+  margin-top: 0.4rem;
+  padding-left: 0.8rem;
+  border-left: 2px solid var(--border);
+}
+
+.entity-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.3rem 0;
+  font-size: 0.9rem;
+}
+
+.entity-item-title { color: var(--text); }
+
+.entity-item-decision {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.3rem;
+}
+
+.decision-collect    { color: #3c8; border: 1px solid #3c8; }
+.decision-no-collect { color: #e55; border: 1px solid #e55; }
