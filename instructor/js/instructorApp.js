@@ -10,7 +10,13 @@
   };
 
   const buildingState = {
-    selectedBuildingId: null
+    selectedBuildingId: null,
+    editMode: null
+    // null = view only
+    // { type: 'entity', entityId: null }        = adding new contact
+    // { type: 'entity', entityId: 'ent-xxx' }   = editing existing contact
+    // { type: 'item', entityId: 'ent-xxx', itemId: null }      = adding new item
+    // { type: 'item', entityId: 'ent-xxx', itemId: 'item-xxx'} = editing item
   };
 
   const els = {
@@ -88,6 +94,7 @@
 
   function selectBuilding(building) {
     buildingState.selectedBuildingId = building.id;
+    buildingState.editMode = null;
     renderBuildingList();
     renderBuildingDetail(building);
   }
@@ -95,63 +102,138 @@
   // ── Building detail panel ───────────────────────────────────────────────────
 
   function renderBuildingDetail(building) {
-    const entityCards = building.entities.map((entity) => {
-      const itemRows = entity.collectionItems.map((item) => {
-        const decisionClass = item.correctDecision === 'collect' ? 'decision-collect' : 'decision-no-collect';
-        const decisionLabel = item.correctDecision === 'collect' ? 'Collect' : 'No Collect';
+    const em = buildingState.editMode;
+
+    function entityCardHtml(entity) {
+      const editingEntity = em?.type === 'entity' && em.entityId === entity.id;
+      const addingItemHere = em?.type === 'item' && em.entityId === entity.id && em.itemId === null;
+      const atMax = entity.collectionItems.length >= MAX_ITEMS;
+
+      const itemsHtml = entity.collectionItems.map((item) => {
+        if (em?.type === 'item' && em.entityId === entity.id && em.itemId === item.id) {
+          return `<div class="inline-item-form">${renderInlineItemFields(item)}</div>`;
+        }
+        const dc = item.correctDecision === 'collect' ? 'decision-collect' : 'decision-no-collect';
+        const dl = item.correctDecision === 'collect' ? 'Collect' : 'No Collect';
         return `
           <div class="entity-item-row" data-item-id="${item.id}">
             <span class="entity-item-title">${escHtml(item.title)}</span>
             <div class="row-actions">
-              <span class="entity-item-decision ${decisionClass}">${decisionLabel}</span>
-              <button class="secondary-btn btn-sm" data-edit-item="${item.id}" data-entity-id="${entity.id}">Edit</button>
-              <button class="secondary-btn btn-sm danger" data-delete-item="${item.id}" data-entity-id="${entity.id}">Delete</button>
+              <span class="entity-item-decision ${dc}">${dl}</span>
+              ${!em ? `<button class="secondary-btn btn-sm" data-edit-item="${item.id}" data-entity-id="${entity.id}">Edit</button>` : ''}
+              ${!em ? `<button class="secondary-btn btn-sm danger" data-delete-item="${item.id}" data-entity-id="${entity.id}">Delete</button>` : ''}
             </div>
-          </div>
-        `;
-      }).join('') || '<p class="muted" style="font-size:0.85rem;margin:0.4rem 0;">No items yet.</p>';
+          </div>`;
+      }).join('') || (addingItemHere ? '' : '<p class="muted-sm" style="margin:0.4rem 0;">No items yet.</p>');
 
-      const atMax = entity.collectionItems.length >= MAX_ITEMS;
+      const addItemFormHtml = addingItemHere
+        ? `<div class="inline-item-form">${renderInlineItemFields(null)}</div>` : '';
+
+      const headerHtml = editingEntity
+        ? `<div class="entity-card-header">
+             <span class="inline-form-label">Editing: ${escHtml(entity.name)}</span>
+           </div>
+           ${renderInlineEntityFields(entity)}`
+        : `<div class="entity-card-header">
+             <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
+             <div class="row-actions">
+               ${!em ? `<button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>` : ''}
+               ${!em ? `<button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>` : ''}
+             </div>
+           </div>`;
 
       return `
-        <div class="entity-card" data-entity-id="${entity.id}">
-          <div class="entity-card-header">
-            <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
-            <div class="row-actions">
-              <button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>
-              <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
-            </div>
-          </div>
+        <div class="entity-card${editingEntity ? ' is-editing' : ''}" data-entity-id="${entity.id}">
+          ${headerHtml}
           <div class="entity-card-items">
-            <div class="section-header" style="margin-bottom:0.4rem;">
-              <span class="muted" style="font-size:0.8rem;">Items ${entity.collectionItems.length}/${MAX_ITEMS}</span>
-              <button class="secondary-btn btn-sm" data-add-item data-entity-id="${entity.id}" ${atMax ? 'disabled' : ''}>+ Add Item</button>
+            <div class="items-section-header">
+              <span class="muted-sm">Items ${entity.collectionItems.length}/${MAX_ITEMS}</span>
+              ${!em && !atMax && !editingEntity ? `<button class="secondary-btn btn-sm" data-add-item data-entity-id="${entity.id}">+ Add Item</button>` : ''}
             </div>
-            ${itemRows}
+            ${itemsHtml}
+            ${addItemFormHtml}
           </div>
-        </div>
-      `;
-    }).join('') || '<p class="muted">No contacts added yet.</p>';
+        </div>`;
+    }
+
+    const addEntityFormHtml = (em?.type === 'entity' && em.entityId === null)
+      ? `<div class="entity-card inline-new-entity">
+           <span class="inline-form-label">New Contact</span>
+           ${renderInlineEntityFields(null)}
+         </div>` : '';
+
+    const entityCardsHtml = building.entities.map(entityCardHtml).join('')
+      || '<p class="muted">No contacts added yet.</p>';
 
     els.buildingDetail.innerHTML = `
       <div class="building-detail-card">
         <div class="building-detail-header">
           <h3 class="building-detail-title">${escHtml(building.name)}</h3>
-          <button id="addEntityBtn" class="secondary-btn btn-sm">+ Add Contact</button>
+          ${!em ? '<button id="addEntityBtn" class="primary-btn btn-sm">+ Add Contact</button>' : ''}
         </div>
-        ${entityCards}
-      </div>
-    `;
+        ${addEntityFormHtml}
+        ${entityCardsHtml}
+      </div>`;
 
     bindBuildingDetailEvents(building);
   }
 
+  // ── Inline form renderers ───────────────────────────────────────────────────
+
+  function renderInlineEntityFields(existing) {
+    const name = existing ? escHtml(existing.name) : '';
+    const desc = existing ? escHtml(existing.description) : '';
+    const type = existing?.type || 'person';
+    return `
+      <div class="inline-form-fields">
+        <input id="ef-name" class="inline-input" type="text" placeholder="Contact name" value="${name}" />
+        <select id="ef-type" class="inline-select">
+          <option value="person" ${type === 'person' ? 'selected' : ''}>Person</option>
+          <option value="section" ${type === 'section' ? 'selected' : ''}>Section</option>
+          <option value="organization" ${type === 'organization' ? 'selected' : ''}>Organization</option>
+        </select>
+        <textarea id="ef-desc" class="inline-textarea" placeholder="Description">${desc}</textarea>
+      </div>
+      <div class="inline-form-actions">
+        <button id="ef-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Contact'}</button>
+        <button id="ef-cancel" class="secondary-btn btn-sm">Cancel</button>
+      </div>`;
+  }
+
+  function renderInlineItemFields(existing) {
+    const title = existing ? escHtml(existing.title) : '';
+    const content = existing ? escHtml(existing.content) : '';
+    const decision = existing?.correctDecision || 'collect';
+    const feedback = existing ? escHtml(existing.feedback) : '';
+    return `
+      <div class="inline-form-fields">
+        <input id="if-title" class="inline-input" type="text" placeholder="Item title" value="${title}" />
+        <textarea id="if-content" class="inline-textarea" placeholder="Content (shown to student)">${content}</textarea>
+        <select id="if-decision" class="inline-select">
+          <option value="collect" ${decision === 'collect' ? 'selected' : ''}>Collect</option>
+          <option value="doNotCollect" ${decision === 'doNotCollect' ? 'selected' : ''}>Do Not Collect</option>
+        </select>
+        <textarea id="if-feedback" class="inline-textarea" placeholder="Instructor feedback (shown after decision)">${feedback}</textarea>
+      </div>
+      <div class="inline-form-actions">
+        <button id="if-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Item'}</button>
+        <button id="if-cancel" class="secondary-btn btn-sm">Cancel</button>
+      </div>`;
+  }
+
+  // ── Building detail event binding ───────────────────────────────────────────
+
   function bindBuildingDetailEvents(building) {
-    document.querySelector('#addEntityBtn')?.addEventListener('click', () => openEntityForm(building, null));
+    document.querySelector('#addEntityBtn')?.addEventListener('click', () => {
+      buildingState.editMode = { type: 'entity', entityId: null };
+      renderBuildingDetail(building);
+    });
 
     document.querySelectorAll('[data-edit-entity]').forEach((btn) => {
-      const entity = building.entities.find((e) => e.id === btn.dataset.editEntity);
-      if (entity) btn.addEventListener('click', () => openEntityForm(building, entity));
+      btn.addEventListener('click', () => {
+        buildingState.editMode = { type: 'entity', entityId: btn.dataset.editEntity };
+        renderBuildingDetail(building);
+      });
     });
 
     document.querySelectorAll('[data-delete-entity]').forEach((btn) => {
@@ -165,14 +247,17 @@
     });
 
     document.querySelectorAll('[data-add-item]').forEach((btn) => {
-      const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
-      if (entity) btn.addEventListener('click', () => openItemForm(building, entity, null));
+      btn.addEventListener('click', () => {
+        buildingState.editMode = { type: 'item', entityId: btn.dataset.entityId, itemId: null };
+        renderBuildingDetail(building);
+      });
     });
 
     document.querySelectorAll('[data-edit-item]').forEach((btn) => {
-      const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
-      const item = entity?.collectionItems.find((i) => i.id === btn.dataset.editItem);
-      if (entity && item) btn.addEventListener('click', () => openItemForm(building, entity, item));
+      btn.addEventListener('click', () => {
+        buildingState.editMode = { type: 'item', entityId: btn.dataset.entityId, itemId: btn.dataset.editItem };
+        renderBuildingDetail(building);
+      });
     });
 
     document.querySelectorAll('[data-delete-item]').forEach((btn) => {
@@ -187,115 +272,68 @@
         renderBuildingDetail(building);
       });
     });
-  }
 
-  // ── Entity form ─────────────────────────────────────────────────────────────
-
-  function openEntityForm(building, existing) {
-    const isNew = !existing;
-    const entity = existing
-      ? JSON.parse(JSON.stringify(existing))
-      : { id: 'entity-' + Date.now(), type: 'person', name: '', description: '', collectionItems: [] };
-
-    openModal({
-      title: isNew ? 'Add Contact' : 'Edit: ' + entity.name,
-      body: `
-        <div class="form-grid">
-          <label>Name <input id="ef-name" type="text" value="${escHtml(entity.name)}" /></label>
-          <label>Type
-            <select id="ef-type">
-              <option value="person" ${entity.type === 'person' ? 'selected' : ''}>Person</option>
-              <option value="section" ${entity.type === 'section' ? 'selected' : ''}>Section</option>
-              <option value="organization" ${entity.type === 'organization' ? 'selected' : ''}>Organization</option>
-            </select>
-          </label>
-          <label>Description <textarea id="ef-desc">${escHtml(entity.description)}</textarea></label>
-        </div>
-      `,
-      actions: [
-        { label: isNew ? 'Add Contact' : 'Save Changes', role: 'primary', closeOnClick: false, onClick: () => saveEntityForm(building, entity, isNew) },
-        { label: 'Close', role: 'close' }
-      ]
+    document.querySelector('#ef-save')?.addEventListener('click', () => {
+      const em = buildingState.editMode;
+      const name = document.querySelector('#ef-name').value.trim();
+      if (!name) { alert('Contact name is required.'); return; }
+      const type = document.querySelector('#ef-type').value;
+      const description = document.querySelector('#ef-desc').value.trim();
+      if (em.entityId === null) {
+        building.entities.push({ id: 'entity-' + Date.now(), type, name, description, collectionItems: [] });
+      } else {
+        const entity = building.entities.find((e) => e.id === em.entityId);
+        if (entity) { entity.name = name; entity.type = type; entity.description = description; }
+      }
+      syncBuildingToScenario(building);
+      buildingState.editMode = null;
+      renderBuildingList();
+      renderBuildingDetail(building);
     });
-  }
 
-  function saveEntityForm(building, entity, isNew) {
-    const name = document.querySelector('#ef-name').value.trim();
-    if (!name) { alert('Contact name is required.'); return; }
-
-    entity.name = name;
-    entity.type = document.querySelector('#ef-type').value;
-    entity.description = document.querySelector('#ef-desc').value.trim();
-
-    if (isNew) {
-      building.entities.push(entity);
-    } else {
-      const idx = building.entities.findIndex((e) => e.id === entity.id);
-      if (idx >= 0) building.entities[idx] = entity;
-    }
-
-    syncBuildingToScenario(building);
-    document.querySelector('.modal-backdrop')?.remove();
-    renderBuildingList();
-    renderBuildingDetail(building);
-  }
-
-  // ── Collection item form ────────────────────────────────────────────────────
-
-  function openItemForm(building, entity, existing) {
-    const isNew = !existing;
-    const item = existing
-      ? JSON.parse(JSON.stringify(existing))
-      : { id: 'item-' + Date.now(), title: '', content: '', correctDecision: 'collect', feedback: '' };
-
-    openModal({
-      title: isNew ? 'Add Collection Item' : 'Edit: ' + item.title,
-      body: `
-        <div class="form-grid">
-          <label>Title <input id="if-title" type="text" value="${escHtml(item.title)}" /></label>
-          <label>Content <textarea id="if-content">${escHtml(item.content)}</textarea></label>
-          <label>Correct Decision
-            <select id="if-decision">
-              <option value="collect" ${item.correctDecision === 'collect' ? 'selected' : ''}>Collect</option>
-              <option value="doNotCollect" ${item.correctDecision === 'doNotCollect' ? 'selected' : ''}>Do Not Collect</option>
-            </select>
-          </label>
-          <label>Instructor Feedback <textarea id="if-feedback">${escHtml(item.feedback)}</textarea></label>
-        </div>
-      `,
-      actions: [
-        { label: isNew ? 'Add Item' : 'Save Changes', role: 'primary', closeOnClick: false, onClick: () => saveItemForm(building, entity, item, isNew) },
-        { label: 'Close', role: 'close' }
-      ]
+    document.querySelector('#ef-cancel')?.addEventListener('click', () => {
+      buildingState.editMode = null;
+      renderBuildingDetail(building);
     });
-  }
 
-  function saveItemForm(building, entity, item, isNew) {
-    const title = document.querySelector('#if-title').value.trim();
-    if (!title) { alert('Item title is required.'); return; }
+    document.querySelector('#if-save')?.addEventListener('click', () => {
+      const em = buildingState.editMode;
+      const entity = building.entities.find((e) => e.id === em.entityId);
+      if (!entity) return;
+      const title = document.querySelector('#if-title').value.trim();
+      if (!title) { alert('Item title is required.'); return; }
+      if (em.itemId === null) {
+        if (entity.collectionItems.length >= MAX_ITEMS) {
+          alert('Maximum of ' + MAX_ITEMS + ' collection items per contact.');
+          return;
+        }
+        entity.collectionItems.push({
+          id: 'item-' + Date.now(),
+          title,
+          content: document.querySelector('#if-content').value.trim(),
+          correctDecision: document.querySelector('#if-decision').value,
+          feedback: document.querySelector('#if-feedback').value.trim()
+        });
+      } else {
+        const item = entity.collectionItems.find((i) => i.id === em.itemId);
+        if (item) {
+          item.title = title;
+          item.content = document.querySelector('#if-content').value.trim();
+          item.correctDecision = document.querySelector('#if-decision').value;
+          item.feedback = document.querySelector('#if-feedback').value.trim();
+        }
+      }
+      syncEntityToBuilding(building, entity);
+      syncBuildingToScenario(building);
+      buildingState.editMode = null;
+      renderBuildingList();
+      renderBuildingDetail(building);
+    });
 
-    if (isNew && entity.collectionItems.length >= MAX_ITEMS) {
-      alert('Maximum of ' + MAX_ITEMS + ' collection items per contact.');
-      return;
-    }
-
-    item.title = title;
-    item.content = document.querySelector('#if-content').value.trim();
-    item.correctDecision = document.querySelector('#if-decision').value;
-    item.feedback = document.querySelector('#if-feedback').value.trim();
-
-    if (isNew) {
-      entity.collectionItems.push(item);
-    } else {
-      const idx = entity.collectionItems.findIndex((i) => i.id === item.id);
-      if (idx >= 0) entity.collectionItems[idx] = item;
-    }
-
-    syncEntityToBuilding(building, entity);
-    syncBuildingToScenario(building);
-    document.querySelector('.modal-backdrop')?.remove();
-    renderBuildingList();
-    renderBuildingDetail(building);
+    document.querySelector('#if-cancel')?.addEventListener('click', () => {
+      buildingState.editMode = null;
+      renderBuildingDetail(building);
+    });
   }
 
   // ── Student result import ───────────────────────────────────────────────────

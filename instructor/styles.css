@@ -336,17 +336,24 @@ code {
   margin-top: 0.2rem;
 }
 
+/* ── Buildings tab full-width override ───────────────────────────────────── */
+
+.panel-content.buildings-panel {
+  max-width: none;
+}
+
 /* ── Buildings two-column layout ─────────────────────────────────────────── */
 
 .buildings-layout {
   display: flex;
-  gap: 1.5rem;
+  gap: 1.8rem;
   align-items: flex-start;
   margin-top: 1.2rem;
 }
 
 .buildings-list-panel {
-  min-width: 16rem;
+  min-width: 20rem;
+  max-width: 22rem;
   flex-shrink: 0;
   background: var(--panel-dark);
   border: 1px solid var(--border);
@@ -363,7 +370,7 @@ code {
   display: block;
   width: 100%;
   text-align: left;
-  padding: 0.8rem 1rem;
+  padding: 0.9rem 1.1rem;
   margin-bottom: 0.5rem;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -383,14 +390,14 @@ code {
 .building-list-item-name {
   display: block;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
 
 .building-list-item-meta {
   display: block;
-  font-size: 0.85rem;
+  font-size: 1rem;
   color: var(--muted);
-  margin-top: 0.15rem;
+  margin-top: 0.2rem;
 }
 
 /* ── Building detail panel ───────────────────────────────────────────────── */
@@ -399,19 +406,19 @@ code {
   background: var(--panel-dark);
   border: 1px solid var(--border);
   border-radius: 0.8rem;
-  padding: 1.4rem;
+  padding: 1.6rem;
 }
 
 .building-detail-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
-  padding-bottom: 0.8rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: 1rem;
   border-bottom: 1px solid var(--border);
 }
 
-.building-detail-title { margin: 0; font-size: 1.4rem; }
+.building-detail-title { margin: 0; font-size: 1.7rem; }
 
 /* ── Inline entity cards ─────────────────────────────────────────────────── */
 
@@ -419,8 +426,13 @@ code {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 0.6rem;
-  padding: 1rem 1.2rem;
-  margin-bottom: 0.8rem;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1rem;
+}
+
+.entity-card.is-editing {
+  border-color: var(--accent);
+  border-width: 2px;
 }
 
 .entity-card-header {
@@ -432,33 +444,110 @@ code {
 
 .entity-card-name {
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.15rem;
 }
 
 .entity-card-items {
-  margin-top: 0.4rem;
-  padding-left: 0.8rem;
+  margin-top: 0.6rem;
+  padding-left: 1rem;
   border-left: 2px solid var(--border);
+}
+
+.items-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
 }
 
 .entity-item-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.3rem 0;
-  font-size: 0.9rem;
+  padding: 0.45rem 0;
+  font-size: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
 }
+
+.entity-item-row:last-child { border-bottom: none; }
 
 .entity-item-title { color: var(--text); }
 
 .entity-item-decision {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 0.1rem 0.4rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 0.3rem;
 }
 
 .decision-collect    { color: #3c8; border: 1px solid #3c8; }
 .decision-no-collect { color: #e55; border: 1px solid #e55; }
+
+/* ── Inline forms (no modals) ────────────────────────────────────────────── */
+
+.inline-form-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.7rem;
+}
+
+.inline-form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.8rem;
+}
+
+.inline-input,
+.inline-select,
+.inline-textarea {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  background: var(--panel-dark);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.inline-input:focus,
+.inline-select:focus,
+.inline-textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.inline-textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.inline-form-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.2rem;
+}
+
+.inline-item-form {
+  background: var(--panel-dark);
+  border: 1px solid var(--accent);
+  border-radius: 0.5rem;
+  padding: 1rem 1.1rem;
+  margin: 0.6rem 0;
+}
+
+.entity-card.inline-new-entity {
+  border-color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+.muted-sm {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
