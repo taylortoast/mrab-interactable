@@ -20,13 +20,15 @@ Optional server (for development): `python -m http.server 8000` from project roo
 335trs-scenario-scaffold/
 ├── assets/maps/                SVG map files
 ├── data/
-│   ├── scenario.js             Active scenario (window.SCENARIO_DATA global)
+│   ├── scenario.js             Instructor bootstrap seed only (window.SCENARIO_DATA global)
 │   └── sample-scenario.json   Archive/reference only — not loaded by app
 ├── shared/
 │   ├── css/base.css            Design system, shared component styles
+│   ├── images/                 Source images (base64 data URLs stored in scenario JSON)
+│   ├── scenarios/              Saved scenario JSON files (scenario-1.json, scenario-2.json, …)
 │   └── js/
-│       ├── scenarioLoader.js   Reads window.SCENARIO_DATA
-│       ├── modal.js            openModal({ title, body, actions })
+│       ├── scenarioLoader.js   loadScenario() + validateScenario()
+│       ├── modal.js            openModal({ title, body, actions, cardClass })
 │       └── jsonUtils.js        downloadJson(), readJsonFile()
 ├── student/
 │   ├── index.html
@@ -38,9 +40,17 @@ Optional server (for development): `python -m http.server 8000` from project roo
     └── js/instructorApp.js
 ```
 
-## Scenario Data (data/scenario.js)
+## Scenario Data
 
-The scenario is a global JS variable loaded via `<script>` tag — not a fetched JSON file.
+### Canonical format: `shared/scenarios/scenario-N.json`
+
+Saved scenarios are **pure JSON** files stored in `shared/scenarios/`. Filename convention: `scenario-1.json`, `scenario-2.json`, etc. The `id` field inside must match: `"id": "scenario-1"`.
+
+The instructor exports the current scenario as JSON and saves it here manually. The student loads a scenario from this folder via a file picker on the login page.
+
+### `data/scenario.js` — instructor bootstrap seed only
+
+Loaded via `<script>` tag in `instructor/index.html` to give the instructor app an initial working state on first open. Not loaded by the student app. Format:
 
 ```js
 window.SCENARIO_DATA = { /* scenario object */ };
@@ -86,8 +96,9 @@ window.SCENARIO_DATA = { /* scenario object */ };
 
 - `bounds` values are percentages (0–100) for CSS `left`, `top`, `width`, `height`
 - Max **5 collection items per entity**
-- Building id, name, description, and bounds are **programmer-only** — set directly in `data/scenario.js`
+- Building id, name, description, and bounds are **programmer-only** — set directly in `data/scenario.js` (the seed)
 - Instructors manage entities and collection items only, via the instructor UI
+- `validateScenario(data)` in `scenarioLoader.js` checks id, title, and buildings fields and throws on invalid input
 
 ## Student Submission Format
 
@@ -124,8 +135,9 @@ Students log in with their name before the scenario begins. Submissions export a
 
 **student/index.html:**
 ```
-data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → student/js/studentApp.js
+shared/js/scenarioLoader.js → shared/js/modal.js → shared/js/jsonUtils.js → student/js/studentApp.js
 ```
+Note: `data/scenario.js` is NOT loaded by the student. The scenario is selected via file picker on the login page. `jsonUtils.js` is required (student uses `readJsonFile`).
 
 **instructor/index.html:**
 ```
@@ -137,8 +149,9 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shar
 
 - **No external libraries** — check all `<script>` tags after any change
 - **No ES modules** — do not use `import`/`export` or `<script type="module">`. Chrome blocks module imports under `file://`. All shared utilities expose globals on `window` and load as plain `<script>` tags.
+- **No `fetch()` for local files** — does not work under `file://`. Use `FileReader` via `readJsonFile()` for all local file loading.
 - **Buildings are static** — id, name, description, bounds are programmer-only; set in `data/scenario.js`. Do not add instructor UI for these fields.
-- All scenario content must come from `window.SCENARIO_DATA` — never hardcode building names or entity data
+- Scenario content in the student app comes from a user-selected JSON file (not a hardcoded script tag). Never assume `window.SCENARIO_DATA` is pre-loaded in the student app.
 - Do not replace or modify the SVG map at `assets/maps/base-map-placeholder.svg`
 - Make small, testable changes — verify in browser after each step
 - Do not add real student PII beyond the name field
