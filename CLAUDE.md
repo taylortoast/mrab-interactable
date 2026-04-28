@@ -148,4 +148,4 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shar
 
 ## Planned Next Work
 
-- Redesign instructor Buildings section for a clearer building-by-building evaluation layout
+- Redesign instructor Buildings section for a clearer building-by-building inline layout (two-column: buildings list left, entity/item detail right — mirrors evaluation tab pattern). Full plan: `docs/335TRS_Instructor_Buildings_Redesign_Plan.md`
