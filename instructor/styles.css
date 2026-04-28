@@ -14,7 +14,7 @@
   border: none;
   border-bottom: 3px solid transparent;
   color: var(--muted);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 600;
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
@@ -98,8 +98,8 @@ textarea { min-height: 6rem; resize: vertical; }
 /* ── Buttons ─────────────────────────────────────────────────────────────── */
 
 .btn-sm {
-  padding: 0.4rem 0.7rem !important;
-  font-size: 0.8rem !important;
+  padding: 0.5rem 0.9rem !important;
+  font-size: 1.4rem !important;
 }
 
 .btn-sm.danger { border: 1px solid #e55; color: #e55; }
@@ -125,7 +125,7 @@ textarea { min-height: 6rem; resize: vertical; }
 /* ── Badge ───────────────────────────────────────────────────────────────── */
 
 .badge {
-  font-size: 0.72rem;
+  font-size: 1.4rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -145,7 +145,7 @@ textarea { min-height: 6rem; resize: vertical; }
   background: var(--panel-dark);
   border-radius: 0.6rem;
   margin-bottom: 1rem;
-  font-size: 1rem;
+  font-size: 1.6rem;
 }
 
 .eval-row {
@@ -163,7 +163,7 @@ textarea { min-height: 6rem; resize: vertical; }
 .eval-meta {
   display: flex;
   gap: 0.6rem;
-  font-size: 0.8rem;
+  font-size: 1.4rem;
   color: var(--muted);
   margin-bottom: 0.2rem;
 }
@@ -173,15 +173,15 @@ textarea { min-height: 6rem; resize: vertical; }
 .eval-decisions {
   display: flex;
   gap: 1rem;
-  font-size: 0.9rem;
+  font-size: 1.6rem;
   margin-bottom: 0.3rem;
 }
 
-.eval-result { font-weight: 700; font-size: 0.75rem; letter-spacing: 0.08em; }
+.eval-result { font-weight: 700; font-size: 1.4rem; letter-spacing: 0.08em; }
 .eval-correct .eval-result  { color: #3c8; }
 .eval-incorrect .eval-result { color: #e55; }
 
-.eval-feedback { font-size: 0.85rem; }
+.eval-feedback { font-size: 1.4rem; }
 
 /* ── Student submission cards ─────────────────────────────────────────────── */
 
@@ -209,7 +209,7 @@ textarea { min-height: 6rem; resize: vertical; }
 }
 
 .student-submitted {
-  font-size: 1.1rem;
+  font-size: 1.4rem;
   display: block;
   margin-top: 0.2rem;
 }
@@ -256,7 +256,7 @@ code {
   background: #263b56;
   color: var(--text);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1.6rem;
   cursor: pointer;
   border: 1px solid var(--border);
   transition: background 0.15s;
@@ -319,19 +319,19 @@ code {
 .student-result-name {
   display: block;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.6rem;
 }
 
 .student-result-meta {
   display: block;
-  font-size: 0.85rem;
+  font-size: 1.4rem;
   color: var(--muted);
   margin-top: 0.15rem;
 }
 
 .student-result-warning {
   display: block;
-  font-size: 0.8rem;
+  font-size: 1.4rem;
   color: #fb0;
   margin-top: 0.2rem;
 }
@@ -390,12 +390,12 @@ code {
 .building-list-item-name {
   display: block;
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.6rem;
 }
 
 .building-list-item-meta {
   display: block;
-  font-size: 1rem;
+  font-size: 1.4rem;
   color: var(--muted);
   margin-top: 0.2rem;
 }
@@ -418,7 +418,7 @@ code {
   border-bottom: 1px solid var(--border);
 }
 
-.building-detail-title { margin: 0; font-size: 1.7rem; }
+.building-detail-title { margin: 0; font-size: 2rem; }
 
 /* ── Inline entity cards ─────────────────────────────────────────────────── */
 
@@ -444,7 +444,7 @@ code {
 
 .entity-card-name {
   font-weight: 700;
-  font-size: 1.15rem;
+  font-size: 1.6rem;
 }
 
 .entity-card-items {
@@ -465,7 +465,7 @@ code {
   align-items: center;
   justify-content: space-between;
   padding: 0.45rem 0;
-  font-size: 1rem;
+  font-size: 1.6rem;
   border-bottom: 1px solid rgba(255,255,255,0.04);
 }
 
@@ -474,7 +474,7 @@ code {
 .entity-item-title { color: var(--text); }
 
 .entity-item-decision {
-  font-size: 0.85rem;
+  font-size: 1.4rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -489,7 +489,7 @@ code {
 
 .inline-form-label {
   display: block;
-  font-size: 0.9rem;
+  font-size: 1.4rem;
   font-weight: 700;
   color: var(--accent);
   margin-bottom: 0.7rem;
@@ -511,7 +511,7 @@ code {
   border: 1px solid var(--border);
   background: var(--panel-dark);
   color: var(--text);
-  font-size: 1rem;
+  font-size: 1.6rem;
   font-family: inherit;
   box-sizing: border-box;
 }
@@ -548,6 +548,6 @@ code {
 }
 
 .muted-sm {
-  font-size: 0.95rem;
+  font-size: 1.4rem;
   color: var(--muted);
 }
