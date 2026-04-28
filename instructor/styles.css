@@ -236,3 +236,102 @@ code {
   border-radius: 0.3rem;
   font-size: 0.9em;
 }
+
+/* ── Evaluation import panel ─────────────────────────────────────────────── */
+
+.evaluation-import-panel {
+  padding: 1.2rem 1.4rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  margin-bottom: 1.6rem;
+  background: var(--panel-dark);
+}
+
+.evaluation-import-panel h3 { margin: 0 0 0.4rem; }
+
+.file-picker-label {
+  display: inline-block;
+  padding: 0.7rem 1.4rem;
+  border-radius: 0.6rem;
+  background: #263b56;
+  color: var(--text);
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  transition: background 0.15s;
+  margin-top: 0.6rem;
+}
+
+.file-picker-label:hover { background: #2f4a6e; }
+
+#studentResultsInput { display: none; }
+
+#studentResultsStatus { margin-top: 0.7rem; margin-bottom: 0; }
+
+/* ── Evaluation two-column layout ────────────────────────────────────────── */
+
+.evaluation-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.student-results-list-panel {
+  min-width: 18rem;
+  flex-shrink: 0;
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  padding: 1.2rem;
+}
+
+.student-results-list-panel h3 { margin: 0 0 0.8rem; }
+
+.student-evaluation-detail-panel {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Student result list items ───────────────────────────────────────────── */
+
+.student-result-list-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.student-result-list-item:hover { background: #1a2d47; }
+
+.student-result-list-item.active {
+  border-left: 3px solid var(--accent);
+  background: #162233;
+}
+
+.student-result-name {
+  display: block;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.student-result-meta {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 0.15rem;
+}
+
+.student-result-warning {
+  display: block;
+  font-size: 0.8rem;
+  color: #fb0;
+  margin-top: 0.2rem;
+}
