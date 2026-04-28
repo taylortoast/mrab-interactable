@@ -27,8 +27,6 @@ Then open:
 ├── data/
 │   ├── scenario.js             Active scenario (window.SCENARIO_DATA global)
 │   └── sample-scenario.json   Archive/reference only — not loaded by the app
-├── docs/
-│   └── buildings.xlsx          Building registry (source of truth for bounds)
 ├── shared/
 │   ├── css/base.css            Design system and shared component styles
 │   └── js/

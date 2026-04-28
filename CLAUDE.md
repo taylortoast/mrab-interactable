@@ -22,8 +22,6 @@ Optional server (for development): `python -m http.server 8000` from project roo
 ├── data/
 │   ├── scenario.js             Active scenario (window.SCENARIO_DATA global)
 │   └── sample-scenario.json   Archive/reference only — not loaded by app
-├── docs/
-│   └── buildings.xlsx          Building registry (source of truth for bounds)
 ├── shared/
 │   ├── css/base.css            Design system, shared component styles
 │   └── js/
