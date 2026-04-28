@@ -3,10 +3,19 @@
 
   let scenario;
 
+  const evaluationState = {
+    submissions: [],
+    selectedSubmissionId: null,
+    loadErrors: []
+  };
+
   const els = {
     exportBtn: document.querySelector('#exportScenarioBtn'),
     buildingList: document.querySelector('#buildingList'),
-    evaluationOutput: document.querySelector('#evaluationOutput')
+    evaluationOutput: document.querySelector('#evaluationOutput'),
+    studentResultsInput: document.querySelector('#studentResultsInput'),
+    studentResultsStatus: document.querySelector('#studentResultsStatus'),
+    studentResultsList: document.querySelector('#studentResultsList')
   };
 
   init();
@@ -16,11 +25,11 @@
     bindEvents();
     renderBuildingList();
     initTabs();
-    loadSubmissions();
   }
 
   function bindEvents() {
     els.exportBtn.addEventListener('click', exportScenarioJs);
+    els.studentResultsInput?.addEventListener('change', handleStudentResultsSelected);
   }
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
@@ -309,95 +318,185 @@
     openEntityForm(building, entity);
   }
 
-  // ── Submission auto-load ────────────────────────────────────────────────────
+  // ── Student result import ───────────────────────────────────────────────────
 
-  function loadSubmissions() {
-    const manifest = window.SUBMISSION_MANIFEST || [];
+  function handleStudentResultsSelected(event) {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
 
-    if (!manifest.length) {
-      els.evaluationOutput.innerHTML = '<p class="muted">No submissions yet. See <code>submissions/index.js</code> for instructions.</p>';
+    evaluationState.loadErrors = [];
+    els.studentResultsStatus.textContent = 'Loading ' + files.length + ' file' + (files.length !== 1 ? 's' : '') + '…';
+
+    Promise.all(files.map(readStudentResultFile))
+      .then((results) => {
+        const valid = results.filter(Boolean);
+        evaluationState.submissions = valid;
+        evaluationState.selectedSubmissionId = valid.length ? valid[0].localId : null;
+        renderStudentResultsList();
+        renderSelectedStudentEvaluation();
+        renderStudentResultsStatus(valid, files.length);
+      })
+      .catch((err) => {
+        console.error(err);
+        els.studentResultsStatus.textContent = 'One or more result files could not be loaded.';
+      });
+  }
+
+  function readStudentResultFile(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const parsed = JSON.parse(reader.result);
+          resolve(normalizeStudentResult(parsed, file.name));
+        } catch (err) {
+          console.warn('Invalid student result file:', file.name, err);
+          evaluationState.loadErrors.push({ filename: file.name, message: err.message });
+          resolve(null);
+        }
+      };
+      reader.onerror = () => {
+        evaluationState.loadErrors.push({ filename: file.name, message: 'Could not read file.' });
+        resolve(null);
+      };
+      reader.readAsText(file);
+    });
+  }
+
+  function normalizeStudentResult(raw, filename) {
+    if (!raw || typeof raw !== 'object') throw new Error('Result file is not a JSON object.');
+    if (!Array.isArray(raw.decisions)) throw new Error('Result file is missing decisions array.');
+    return {
+      localId: filename + '-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+      filename,
+      studentName: String(raw.studentName || 'Unknown Student').trim(),
+      submittedAt: raw.submittedAt || null,
+      scenarioId: raw.scenarioId || 'unknown-scenario',
+      scenarioTitle: raw.scenarioTitle || '',
+      decisions: raw.decisions.map((d) => ({
+        buildingId: d.buildingId,
+        entityId: d.entityId,
+        itemId: d.itemId,
+        decision: d.decision,
+        timestamp: d.timestamp || null
+      }))
+    };
+  }
+
+  function renderStudentResultsList() {
+    if (!evaluationState.submissions.length) {
+      els.studentResultsList.innerHTML = '<p class="muted">No student results loaded.</p>';
       return;
     }
+    els.studentResultsList.innerHTML = evaluationState.submissions.map((sub) => {
+      const score = calculateSubmissionScore(sub);
+      const selected = sub.localId === evaluationState.selectedSubmissionId;
+      const mismatch = sub.scenarioId !== scenario.id;
+      return `
+        <button class="student-result-list-item${selected ? ' active' : ''}" data-submission-id="${escHtml(sub.localId)}">
+          <span class="student-result-name">${escHtml(sub.studentName)}</span>
+          <span class="student-result-meta">${score.correct} / ${score.total} correct</span>
+          ${mismatch ? '<span class="student-result-warning">Scenario mismatch</span>' : ''}
+        </button>
+      `;
+    }).join('');
 
-    els.evaluationOutput.innerHTML = '<p class="muted">Loading submissions…</p>';
-
-    const promises = manifest.map((filename) => new Promise((resolve) => {
-      const s = document.createElement('script');
-      s.src = './submissions/' + filename;
-      s.onload = resolve;
-      s.onerror = () => {
-        console.warn('Could not load submission: ' + filename);
-        resolve();
-      };
-      document.head.appendChild(s);
-    }));
-
-    Promise.all(promises).then(() => {
-      renderAllEvaluations(window.STUDENT_SUBMISSIONS || []);
+    els.studentResultsList.querySelectorAll('[data-submission-id]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        evaluationState.selectedSubmissionId = btn.dataset.submissionId;
+        renderStudentResultsList();
+        renderSelectedStudentEvaluation();
+      });
     });
+  }
+
+  function renderSelectedStudentEvaluation() {
+    const selected = evaluationState.submissions.find((s) => s.localId === evaluationState.selectedSubmissionId);
+    if (!selected) {
+      els.evaluationOutput.innerHTML = '<p class="muted">Select a student to view evaluation details.</p>';
+      return;
+    }
+    els.evaluationOutput.innerHTML = renderStudentCard(selected);
+  }
+
+  function renderStudentResultsStatus(valid, totalFiles) {
+    const failed = totalFiles - valid.length;
+    let msg = valid.length + ' of ' + totalFiles + ' file' + (totalFiles !== 1 ? 's' : '') + ' loaded.';
+    if (failed > 0) {
+      const names = evaluationState.loadErrors.map((e) => e.filename).join(', ');
+      msg += ' ' + failed + ' could not be parsed: ' + names;
+    }
+    els.studentResultsStatus.textContent = msg;
+  }
+
+  // ── Score helpers ───────────────────────────────────────────────────────────
+
+  function findScenarioRefs(decision) {
+    const building = scenario.buildings.find((b) => b.id === decision.buildingId);
+    const entity = building?.entities.find((e) => e.id === decision.entityId);
+    const item = entity?.collectionItems.find((i) => i.id === decision.itemId);
+    return { building, entity, item };
+  }
+
+  function calculateSubmissionScore(results) {
+    const decisions = results.decisions || [];
+    const total = decisions.length;
+    const correct = decisions.filter((d) => {
+      const { item } = findScenarioRefs(d);
+      return item && d.decision === item.correctDecision;
+    }).length;
+    return { correct, total };
   }
 
   // ── Evaluation rendering ────────────────────────────────────────────────────
 
-  function renderAllEvaluations(submissions) {
-    if (!submissions.length) {
-      els.evaluationOutput.innerHTML = '<p class="muted">No submissions loaded. Check that filenames in <code>submissions/index.js</code> match the files in the submissions folder.</p>';
-      return;
-    }
-    els.evaluationOutput.innerHTML = submissions.map(renderStudentCard).join('');
-  }
-
   function renderStudentCard(results) {
     const decisions = results.decisions || [];
-    const total = decisions.length;
-
-    const correctCount = decisions.filter((d) => {
-      const building = scenario.buildings.find((b) => b.id === d.buildingId);
-      const entity = building?.entities.find((e) => e.id === d.entityId);
-      const item = entity?.collectionItems.find((i) => i.id === d.itemId);
-      return item && d.decision === item.correctDecision;
-    }).length;
-
-    const scoreClass = total === 0 ? '' : (correctCount === total ? 'score-perfect' : correctCount >= total / 2 ? 'score-passing' : 'score-failing');
+    const { correct, total } = calculateSubmissionScore(results);
+    const scoreClass = total === 0 ? '' : (correct === total ? 'score-perfect' : correct >= total / 2 ? 'score-passing' : 'score-failing');
+    const mismatch = results.scenarioId !== scenario.id;
 
     const rows = decisions.map((d) => {
-      const building = scenario.buildings.find((b) => b.id === d.buildingId);
-      const entity = building?.entities.find((e) => e.id === d.entityId);
-      const item = entity?.collectionItems.find((i) => i.id === d.itemId);
+      const { building, entity, item } = findScenarioRefs(d);
 
       if (!item) {
-        return `<div class="eval-row eval-unknown"><strong>Unknown item</strong> (ID: ${d.itemId})</div>`;
+        return '<div class="eval-row eval-unknown"><strong>Unknown item</strong> (ID: ' + escHtml(d.itemId) + ')</div>';
       }
 
-      const correct = d.decision === item.correctDecision;
+      const isCorrect = d.decision === item.correctDecision;
       const decisionLabel = d.decision === 'collect' ? 'Collect' : 'Do Not Collect';
       const correctLabel = item.correctDecision === 'collect' ? 'Collect' : 'Do Not Collect';
 
       return `
-        <div class="eval-row ${correct ? 'eval-correct' : 'eval-incorrect'}">
+        <div class="eval-row ${isCorrect ? 'eval-correct' : 'eval-incorrect'}">
           <div class="eval-meta">
-            <span class="eval-building">${building?.name ?? d.buildingId}</span>
-            <span class="eval-entity">${entity?.name ?? d.entityId}</span>
+            <span class="eval-building">${building?.name ?? escHtml(d.buildingId)}</span>
+            <span class="eval-entity">${entity?.name ?? escHtml(d.entityId)}</span>
           </div>
-          <div class="eval-item-title">${item.title}</div>
+          <div class="eval-item-title">${escHtml(item.title)}</div>
           <div class="eval-decisions">
             <span>Student: <strong>${decisionLabel}</strong></span>
             <span>Correct: <strong>${correctLabel}</strong></span>
-            <span class="eval-result">${correct ? 'CORRECT' : 'INCORRECT'}</span>
+            <span class="eval-result">${isCorrect ? 'CORRECT' : 'INCORRECT'}</span>
           </div>
-          <div class="eval-feedback muted">${item.feedback}</div>
+          <div class="eval-feedback muted">${escHtml(item.feedback)}</div>
         </div>
       `;
     }).join('');
+
+    const mismatchWarning = mismatch
+      ? '<span class="student-result-warning">Warning: result is from scenario “' + escHtml(results.scenarioId) + '”</span>'
+      : '';
 
     return `
       <div class="student-card">
         <div class="student-card-header">
           <div>
             <span class="student-name">${escHtml(results.studentName || 'Unknown Student')}</span>
-            <span class="student-submitted muted">Submitted ${new Date(results.submittedAt).toLocaleString()}</span>
+            <span class="student-submitted muted">Submitted ${results.submittedAt ? new Date(results.submittedAt).toLocaleString() : 'Unknown date'}</span>
+            ${mismatchWarning}
           </div>
-          <div class="student-score ${scoreClass}">${correctCount} / ${total} correct</div>
+          <div class="student-score ${scoreClass}">${correct} / ${total} correct</div>
         </div>
         <div class="student-card-body">
           ${rows || '<p class="muted">No decisions recorded.</p>'}
