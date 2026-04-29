@@ -14,7 +14,11 @@
       <p class="eyebrow">Instructor/Admin</p>
       <h1>Scenario Builder</h1>
     </div>
-    <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
+    <div class="button-row">
+      <label class="secondary-btn" for="loadScenarioInput" style="cursor:pointer;">Load Scenario</label>
+      <input id="loadScenarioInput" type="file" accept=".json,application/json" style="display:none;" />
+      <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
+    </div>
   </header>
 
   <nav class="tab-nav">

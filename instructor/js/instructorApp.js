@@ -10,17 +10,12 @@
   };
 
   const buildingState = {
-    selectedBuildingId: null,
-    editMode: null
-    // null = view only
-    // { type: 'entity', entityId: null }        = adding new contact
-    // { type: 'entity', entityId: 'ent-xxx' }   = editing existing contact
-    // { type: 'item', entityId: 'ent-xxx', itemId: null }      = adding new item
-    // { type: 'item', entityId: 'ent-xxx', itemId: 'item-xxx'} = editing item
+    selectedBuildingId: null
   };
 
   const els = {
     exportBtn: document.querySelector('#exportScenarioBtn'),
+    loadScenarioInput: document.querySelector('#loadScenarioInput'),
     buildingList: document.querySelector('#buildingList'),
     buildingDetail: document.querySelector('#buildingDetail'),
     evaluationOutput: document.querySelector('#evaluationOutput'),
@@ -33,16 +28,16 @@
 
   function init() {
     scenario = JSON.parse(JSON.stringify(loadScenario()));
+    initBuildingDetailListeners();
     bindEvents();
     renderBuildingList();
-    if (scenario.buildings.length) {
-      selectBuilding(scenario.buildings[0]);
-    }
+    if (scenario.buildings.length) selectBuilding(scenario.buildings[0]);
     initTabs();
   }
 
   function bindEvents() {
-    els.exportBtn.addEventListener('click', exportScenarioJs);
+    els.exportBtn.addEventListener('click', exportScenarioJson);
+    els.loadScenarioInput?.addEventListener('change', handleLoadScenario);
     els.studentResultsInput?.addEventListener('change', handleStudentResultsSelected);
   }
 
@@ -59,16 +54,25 @@
     });
   }
 
-  // ── Export ──────────────────────────────────────────────────────────────────
+  // ── Export / Load ───────────────────────────────────────────────────────────
 
-  function exportScenarioJs() {
-    const content = 'window.SCENARIO_DATA = ' + JSON.stringify(scenario, null, 2) + ';\n';
-    const blob = new Blob([content], { type: 'application/javascript' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'scenario.js';
-    link.click();
-    URL.revokeObjectURL(link.href);
+  function exportScenarioJson() {
+    downloadJson(scenario.id + '.json', scenario);
+  }
+
+  function handleLoadScenario(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    readJsonFile(file)
+      .then((data) => {
+        validateScenario(data);
+        scenario = JSON.parse(JSON.stringify(data));
+        buildingState.selectedBuildingId = null;
+        renderBuildingList();
+        if (scenario.buildings.length) selectBuilding(scenario.buildings[0]);
+      })
+      .catch((err) => alert('Could not load scenario: ' + err.message));
+    event.target.value = '';
   }
 
   // ── Building list ───────────────────────────────────────────────────────────
@@ -94,7 +98,6 @@
 
   function selectBuilding(building) {
     buildingState.selectedBuildingId = building.id;
-    buildingState.editMode = null;
     renderBuildingList();
     renderBuildingDetail(building);
   }
@@ -102,326 +105,244 @@
   // ── Building detail panel ───────────────────────────────────────────────────
 
   function renderBuildingDetail(building) {
-    const em = buildingState.editMode;
-
-    function entityCardHtml(entity) {
-      const editingEntity = em?.type === 'entity' && em.entityId === entity.id;
-      const addingItemHere = em?.type === 'item' && em.entityId === entity.id && em.itemId === null;
-      const atMax = entity.collectionItems.length >= MAX_ITEMS;
-
-      const itemsHtml = entity.collectionItems.map((item) => {
-        if (em?.type === 'item' && em.entityId === entity.id && em.itemId === item.id) {
-          return `<div class="inline-item-form">${renderInlineItemFields(item)}</div>`;
-        }
-        const dc = item.correctDecision === 'collect' ? 'decision-collect' : 'decision-no-collect';
-        const dl = item.correctDecision === 'collect' ? 'Collect' : 'No Collect';
-        return `
-          <div class="entity-item-row" data-item-id="${item.id}">
-            ${item.image ? `<img src="${escHtml(item.image)}" class="item-thumbnail" alt="" />` : ''}
-            <span class="entity-item-title">${escHtml(item.title)}</span>
-            <div class="row-actions">
-              <span class="entity-item-decision ${dc}">${dl}</span>
-              ${!em ? `<button class="secondary-btn btn-sm" data-edit-item="${item.id}" data-entity-id="${entity.id}">Edit</button>` : ''}
-              ${!em ? `<button class="secondary-btn btn-sm danger" data-delete-item="${item.id}" data-entity-id="${entity.id}">Delete</button>` : ''}
-            </div>
-          </div>`;
-      }).join('') || (addingItemHere ? '' : '<p class="muted-sm" style="margin:0.4rem 0;">No items yet.</p>');
-
-      const addItemFormHtml = addingItemHere
-        ? `<div class="inline-item-form">${renderInlineItemFields(null)}</div>` : '';
-
-      const headerHtml = editingEntity
-        ? `<div class="entity-card-header">
-             <span class="inline-form-label">Editing: ${escHtml(entity.name)}</span>
-           </div>
-           ${renderInlineEntityFields(entity)}`
-        : `<div class="entity-card-header">
-             <div class="entity-name-group">
-               ${entity.image ? `<img src="${escHtml(entity.image)}" class="entity-thumbnail" alt="" />` : ''}
-               <span class="entity-card-name">${escHtml(entity.name)} <span class="badge">${entity.type}</span></span>
-             </div>
-             <div class="row-actions">
-               ${!em ? `<button class="secondary-btn btn-sm" data-edit-entity="${entity.id}">Edit</button>` : ''}
-               ${!em ? `<button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>` : ''}
-             </div>
-           </div>`;
-
-      return `
-        <div class="entity-card${editingEntity ? ' is-editing' : ''}" data-entity-id="${entity.id}">
-          ${headerHtml}
-          <div class="entity-card-items">
-            <div class="items-section-header">
-              <span class="muted-sm">Items ${entity.collectionItems.length}/${MAX_ITEMS}</span>
-              ${!em && !atMax && !editingEntity ? `<button class="secondary-btn btn-sm" data-add-item data-entity-id="${entity.id}">+ Add Item</button>` : ''}
-            </div>
-            ${itemsHtml}
-            ${addItemFormHtml}
-          </div>
-        </div>`;
-    }
-
-    const addEntityFormHtml = (em?.type === 'entity' && em.entityId === null)
-      ? `<div class="entity-card inline-new-entity">
-           <span class="inline-form-label">New Contact</span>
-           ${renderInlineEntityFields(null)}
-         </div>` : '';
-
-    const entityCardsHtml = building.entities.map(entityCardHtml).join('')
-      || '<p class="muted">No contacts added yet.</p>';
-
+    const entityCards = building.entities.map((e) => renderEntityCard(e)).join('');
     els.buildingDetail.innerHTML = `
       <div class="building-detail-card">
         <div class="building-detail-header">
           <h3 class="building-detail-title">${escHtml(building.name)}</h3>
-          ${!em ? '<button id="addEntityBtn" class="primary-btn btn-sm">+ Add Contact</button>' : ''}
+          <button id="addEntityBtn" class="primary-btn btn-sm">+ Add Contact</button>
         </div>
-        ${addEntityFormHtml}
-        ${entityCardsHtml}
+        ${entityCards || '<p class="muted">No contacts added yet.</p>'}
       </div>`;
-
-    bindBuildingDetailEvents(building);
   }
 
-  // ── Inline form renderers ───────────────────────────────────────────────────
+  function renderEntityCard(entity) {
+    const atMax = entity.collectionItems.length >= MAX_ITEMS;
+    const itemCards = entity.collectionItems.map((item) => renderItemCard(item, entity.id)).join('');
+    const imgHtml = entity.image
+      ? `<img src="${escHtml(entity.image)}" class="entity-card-img" alt="" />`
+      : '';
+    const imgChangeBtn = `
+      <label class="secondary-btn btn-sm entity-img-upload-btn" title="${entity.image ? 'Change image' : 'Add image'}">
+        ${entity.image ? '↺' : '+ Img'}
+        <input type="file" accept="image/*" data-img-upload data-entity-id="${entity.id}" style="display:none;" />
+      </label>`;
+    const imgClearBtn = entity.image
+      ? `<button class="secondary-btn btn-sm danger entity-img-clear-btn" data-img-clear data-entity-id="${entity.id}" title="Remove image">×</button>`
+      : '';
 
-  function renderInlineEntityFields(existing) {
-    const name = existing ? escHtml(existing.name) : '';
-    const desc = existing ? escHtml(existing.description) : '';
-    const type = existing?.type || 'person';
-    const imgSrc = existing?.image || '';
-    const imgPreview = imgSrc
-      ? `<div id="ef-img-preview" class="inline-img-preview"><img src="${escHtml(imgSrc)}" class="inline-img-preview-img" alt="" /></div>`
-      : `<div id="ef-img-preview" class="inline-img-preview" style="display:none;"></div>`;
     return `
-      <div class="inline-form-fields">
-        <input id="ef-name" class="inline-input" type="text" placeholder="Contact name" value="${name}" />
-        <select id="ef-type" class="inline-select">
-          <option value="person" ${type === 'person' ? 'selected' : ''}>Person</option>
-          <option value="section" ${type === 'section' ? 'selected' : ''}>Section</option>
-          <option value="organization" ${type === 'organization' ? 'selected' : ''}>Organization</option>
-        </select>
-        <textarea id="ef-desc" class="inline-textarea" placeholder="Description">${desc}</textarea>
-        <div class="inline-img-field">
-          <span class="inline-form-sublabel">Image (optional)</span>
-          ${imgPreview}
-          <input type="hidden" id="ef-img-data" value="${escHtml(imgSrc)}" />
-          <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
-            <label class="inline-file-label secondary-btn btn-sm">
-              <span id="ef-img-btn-text">${imgSrc ? 'Change Image' : 'Select Image'}</span>
-              <input type="file" id="ef-img-file" accept="image/*" style="display:none;" />
-            </label>
-            ${imgSrc ? '<button id="ef-img-clear" class="secondary-btn btn-sm danger">Remove</button>' : ''}
+      <div class="entity-card-v2" data-entity-id="${entity.id}">
+        <div class="entity-card-v2-header">
+          <div class="entity-header-left">
+            <div class="entity-img-slot">
+              ${imgHtml}
+              ${imgChangeBtn}
+              ${imgClearBtn}
+            </div>
+            <div class="entity-name-type">
+              <input class="inline-input entity-name-input" type="text" value="${escHtml(entity.name)}"
+                placeholder="Contact name" data-entity-field="name" data-entity-id="${entity.id}" />
+              <select class="inline-select" data-entity-field="type" data-entity-id="${entity.id}">
+                <option value="person"       ${entity.type === 'person'       ? 'selected' : ''}>Person</option>
+                <option value="section"      ${entity.type === 'section'      ? 'selected' : ''}>Section</option>
+                <option value="organization" ${entity.type === 'organization' ? 'selected' : ''}>Organization</option>
+              </select>
+            </div>
           </div>
+          <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
         </div>
-      </div>
-      <div class="inline-form-actions">
-        <button id="ef-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Contact'}</button>
-        <button id="ef-cancel" class="secondary-btn btn-sm">Cancel</button>
+        <textarea class="inline-textarea entity-desc-field" placeholder="Description"
+          data-entity-field="description" data-entity-id="${entity.id}">${escHtml(entity.description)}</textarea>
+        <div class="item-card-grid">
+          ${itemCards}
+          ${!atMax ? `<div class="item-card item-card-add"><button class="add-item-btn" data-add-item data-entity-id="${entity.id}">+ Add Item</button></div>` : ''}
+        </div>
       </div>`;
   }
 
-  function renderInlineItemFields(existing) {
-    const title = existing ? escHtml(existing.title) : '';
-    const content = existing ? escHtml(existing.content) : '';
-    const decision = existing?.correctDecision || 'collect';
-    const feedback = existing ? escHtml(existing.feedback) : '';
-    const imgSrc = existing?.image || '';
-    const imgPreview = imgSrc
-      ? `<div id="if-img-preview" class="inline-img-preview"><img src="${escHtml(imgSrc)}" class="inline-img-preview-img" alt="" /></div>`
-      : `<div id="if-img-preview" class="inline-img-preview" style="display:none;"></div>`;
+  function renderItemCard(item, entityId) {
+    const isCollect = item.correctDecision === 'collect';
     return `
-      <div class="inline-form-fields">
-        <input id="if-title" class="inline-input" type="text" placeholder="Item title" value="${title}" />
-        <textarea id="if-content" class="inline-textarea" placeholder="Content (shown to student)">${content}</textarea>
-        <select id="if-decision" class="inline-select">
-          <option value="collect" ${decision === 'collect' ? 'selected' : ''}>Collect</option>
-          <option value="doNotCollect" ${decision === 'doNotCollect' ? 'selected' : ''}>Do Not Collect</option>
-        </select>
-        <textarea id="if-feedback" class="inline-textarea" placeholder="Instructor feedback (shown after decision)">${feedback}</textarea>
-        <div class="inline-img-field">
-          <span class="inline-form-sublabel">Image (optional)</span>
-          ${imgPreview}
-          <input type="hidden" id="if-img-data" value="${escHtml(imgSrc)}" />
-          <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
-            <label class="inline-file-label secondary-btn btn-sm">
-              <span id="if-img-btn-text">${imgSrc ? 'Change Image' : 'Select Image'}</span>
-              <input type="file" id="if-img-file" accept="image/*" style="display:none;" />
-            </label>
-            ${imgSrc ? '<button id="if-img-clear" class="secondary-btn btn-sm danger">Remove</button>' : ''}
-          </div>
+      <div class="item-card" data-item-id="${item.id}" data-entity-id="${entityId}">
+        <div class="item-card-header">
+          <input class="inline-input item-title-input" type="text" value="${escHtml(item.title)}"
+            placeholder="Item title" data-item-field="title" data-item-id="${item.id}" data-entity-id="${entityId}" />
+          <button class="item-delete-btn secondary-btn btn-sm danger"
+            data-delete-item="${item.id}" data-entity-id="${entityId}" title="Delete">×</button>
         </div>
-      </div>
-      <div class="inline-form-actions">
-        <button id="if-save" class="primary-btn btn-sm">${existing ? 'Save Changes' : 'Add Item'}</button>
-        <button id="if-cancel" class="secondary-btn btn-sm">Cancel</button>
+        <button class="collect-toggle ${isCollect ? 'is-collect' : 'is-no-collect'}"
+          data-toggle-decision data-item-id="${item.id}" data-entity-id="${entityId}">
+          <span class="toggle-dot"></span>
+          <span class="toggle-label">${isCollect ? 'Collect' : 'Do Not Collect'}</span>
+        </button>
+        <textarea class="inline-textarea item-content-area" placeholder="Instructor Input"
+          data-item-field="content" data-item-id="${item.id}" data-entity-id="${entityId}">${escHtml(item.content)}</textarea>
+        <textarea class="inline-textarea item-feedback-area" placeholder="Feedback (shown after decision)"
+          data-item-field="feedback" data-item-id="${item.id}" data-entity-id="${entityId}">${escHtml(item.feedback)}</textarea>
       </div>`;
   }
 
-  // ── Building detail event binding ───────────────────────────────────────────
+  // ── Building detail event delegation (single persistent listener) ───────────
 
-  function bindBuildingDetailEvents(building) {
-    document.querySelector('#addEntityBtn')?.addEventListener('click', () => {
-      buildingState.editMode = { type: 'entity', entityId: null };
-      renderBuildingDetail(building);
-    });
+  function initBuildingDetailListeners() {
+    els.buildingDetail.addEventListener('blur', onDetailBlur, true);
+    els.buildingDetail.addEventListener('change', onDetailChange);
+    els.buildingDetail.addEventListener('click', onDetailClick);
+  }
 
-    document.querySelectorAll('[data-edit-entity]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        buildingState.editMode = { type: 'entity', entityId: btn.dataset.editEntity };
-        renderBuildingDetail(building);
-      });
-    });
+  function currentBuilding() {
+    return scenario.buildings.find((b) => b.id === buildingState.selectedBuildingId);
+  }
 
-    document.querySelectorAll('[data-delete-entity]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (!confirm('Delete this contact and all its collection items?')) return;
-        building.entities = building.entities.filter((e) => e.id !== btn.dataset.deleteEntity);
-        syncBuildingToScenario(building);
-        renderBuildingList();
-        renderBuildingDetail(building);
-      });
-    });
+  function onDetailBlur(e) {
+    const el = e.target;
+    const building = currentBuilding();
+    if (!building) return;
 
-    document.querySelectorAll('[data-add-item]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        buildingState.editMode = { type: 'item', entityId: btn.dataset.entityId, itemId: null };
-        renderBuildingDetail(building);
-      });
-    });
-
-    document.querySelectorAll('[data-edit-item]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        buildingState.editMode = { type: 'item', entityId: btn.dataset.entityId, itemId: btn.dataset.editItem };
-        renderBuildingDetail(building);
-      });
-    });
-
-    document.querySelectorAll('[data-delete-item]').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        if (!confirm('Delete this collection item?')) return;
-        const entity = building.entities.find((e) => e.id === btn.dataset.entityId);
-        if (!entity) return;
-        entity.collectionItems = entity.collectionItems.filter((i) => i.id !== btn.dataset.deleteItem);
-        syncEntityToBuilding(building, entity);
-        syncBuildingToScenario(building);
-        renderBuildingList();
-        renderBuildingDetail(building);
-      });
-    });
-
-    document.querySelector('#ef-img-file')?.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        document.querySelector('#ef-img-data').value = reader.result;
-        const preview = document.querySelector('#ef-img-preview');
-        preview.style.display = '';
-        preview.innerHTML = `<img src="${escHtml(reader.result)}" class="inline-img-preview-img" alt="" />`;
-        const btnText = document.querySelector('#ef-img-btn-text');
-        if (btnText) btnText.textContent = 'Change Image';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    document.querySelector('#ef-img-clear')?.addEventListener('click', () => {
-      document.querySelector('#ef-img-data').value = '';
-      const preview = document.querySelector('#ef-img-preview');
-      preview.style.display = 'none';
-      preview.innerHTML = '';
-      const btnText = document.querySelector('#ef-img-btn-text');
-      if (btnText) btnText.textContent = 'Select Image';
-    });
-
-    document.querySelector('#if-img-file')?.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        document.querySelector('#if-img-data').value = reader.result;
-        const preview = document.querySelector('#if-img-preview');
-        preview.style.display = '';
-        preview.innerHTML = `<img src="${escHtml(reader.result)}" class="inline-img-preview-img" alt="" />`;
-        const btnText = document.querySelector('#if-img-btn-text');
-        if (btnText) btnText.textContent = 'Change Image';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    document.querySelector('#if-img-clear')?.addEventListener('click', () => {
-      document.querySelector('#if-img-data').value = '';
-      const preview = document.querySelector('#if-img-preview');
-      preview.style.display = 'none';
-      preview.innerHTML = '';
-      const btnText = document.querySelector('#if-img-btn-text');
-      if (btnText) btnText.textContent = 'Select Image';
-    });
-
-    document.querySelector('#ef-save')?.addEventListener('click', () => {
-      const em = buildingState.editMode;
-      const name = document.querySelector('#ef-name').value.trim();
-      if (!name) { alert('Contact name is required.'); return; }
-      const type = document.querySelector('#ef-type').value;
-      const description = document.querySelector('#ef-desc').value.trim();
-      const image = document.querySelector('#ef-img-data')?.value || '';
-      if (em.entityId === null) {
-        building.entities.push({ id: 'entity-' + Date.now(), type, name, description, image, collectionItems: [] });
-      } else {
-        const entity = building.entities.find((e) => e.id === em.entityId);
-        if (entity) { entity.name = name; entity.type = type; entity.description = description; entity.image = image; }
-      }
-      syncBuildingToScenario(building);
-      buildingState.editMode = null;
-      renderBuildingList();
-      renderBuildingDetail(building);
-    });
-
-    document.querySelector('#ef-cancel')?.addEventListener('click', () => {
-      buildingState.editMode = null;
-      renderBuildingDetail(building);
-    });
-
-    document.querySelector('#if-save')?.addEventListener('click', () => {
-      const em = buildingState.editMode;
-      const entity = building.entities.find((e) => e.id === em.entityId);
+    if (el.dataset.entityField) {
+      const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
       if (!entity) return;
-      const title = document.querySelector('#if-title').value.trim();
-      if (!title) { alert('Item title is required.'); return; }
-      const image = document.querySelector('#if-img-data')?.value || '';
-      if (em.itemId === null) {
-        if (entity.collectionItems.length >= MAX_ITEMS) {
-          alert('Maximum of ' + MAX_ITEMS + ' collection items per contact.');
-          return;
-        }
-        entity.collectionItems.push({
-          id: 'item-' + Date.now(),
-          title,
-          content: document.querySelector('#if-content').value.trim(),
-          correctDecision: document.querySelector('#if-decision').value,
-          feedback: document.querySelector('#if-feedback').value.trim(),
-          image
-        });
-      } else {
-        const item = entity.collectionItems.find((i) => i.id === em.itemId);
-        if (item) {
-          item.title = title;
-          item.content = document.querySelector('#if-content').value.trim();
-          item.correctDecision = document.querySelector('#if-decision').value;
-          item.feedback = document.querySelector('#if-feedback').value.trim();
-          item.image = image;
-        }
+      if (el.dataset.entityField === 'name' && !el.value.trim()) {
+        el.value = entity.name;
+        return;
       }
+      entity[el.dataset.entityField] = el.value;
+      syncBuildingToScenario(building);
+      if (el.dataset.entityField === 'name') renderBuildingList();
+    } else if (el.dataset.itemField) {
+      const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
+      const item = entity?.collectionItems.find((i) => i.id === el.dataset.itemId);
+      if (!item) return;
+      item[el.dataset.itemField] = el.value;
       syncEntityToBuilding(building, entity);
       syncBuildingToScenario(building);
-      buildingState.editMode = null;
+    }
+  }
+
+  function onDetailChange(e) {
+    const el = e.target;
+    const building = currentBuilding();
+    if (!building) return;
+
+    if (el.dataset.entityField === 'type') {
+      const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
+      if (entity) {
+        entity.type = el.value;
+        syncBuildingToScenario(building);
+      }
+      return;
+    }
+
+    if (el.dataset.imgUpload !== undefined) {
+      const file = el.files[0];
+      if (!file) return;
+      const entityId = el.dataset.entityId;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const entity = building.entities.find((ent) => ent.id === entityId);
+        if (!entity) return;
+        entity.image = reader.result;
+        syncBuildingToScenario(building);
+        const slot = els.buildingDetail.querySelector(`.entity-card-v2[data-entity-id="${entityId}"] .entity-img-slot`);
+        if (slot) {
+          slot.innerHTML = `
+            <img src="${escHtml(reader.result)}" class="entity-card-img" alt="" />
+            <label class="secondary-btn btn-sm entity-img-upload-btn" title="Change image">
+              ↺<input type="file" accept="image/*" data-img-upload data-entity-id="${entityId}" style="display:none;" />
+            </label>
+            <button class="secondary-btn btn-sm danger entity-img-clear-btn" data-img-clear data-entity-id="${entityId}" title="Remove image">×</button>`;
+        }
+      };
+      reader.readAsDataURL(file);
+      el.value = '';
+    }
+  }
+
+  function onDetailClick(e) {
+    const building = currentBuilding();
+    if (!building) return;
+
+    if (e.target.id === 'addEntityBtn') {
+      building.entities.push({
+        id: 'entity-' + Date.now(),
+        type: 'person', name: 'New Contact', description: '', image: '', collectionItems: []
+      });
+      syncBuildingToScenario(building);
       renderBuildingList();
       renderBuildingDetail(building);
-    });
+      return;
+    }
 
-    document.querySelector('#if-cancel')?.addEventListener('click', () => {
-      buildingState.editMode = null;
+    const toggle = e.target.closest('[data-toggle-decision]');
+    if (toggle) {
+      const entity = building.entities.find((ent) => ent.id === toggle.dataset.entityId);
+      const item = entity?.collectionItems.find((i) => i.id === toggle.dataset.itemId);
+      if (item) {
+        item.correctDecision = item.correctDecision === 'collect' ? 'doNotCollect' : 'collect';
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        const isCollect = item.correctDecision === 'collect';
+        toggle.className = `collect-toggle ${isCollect ? 'is-collect' : 'is-no-collect'}`;
+        toggle.querySelector('.toggle-label').textContent = isCollect ? 'Collect' : 'Do Not Collect';
+      }
+      return;
+    }
+
+    const addItemEl = e.target.closest('[data-add-item]');
+    if (addItemEl) {
+      const entity = building.entities.find((ent) => ent.id === addItemEl.dataset.entityId);
+      if (entity && entity.collectionItems.length < MAX_ITEMS) {
+        entity.collectionItems.push({
+          id: 'item-' + Date.now(),
+          title: 'New Item', content: '', correctDecision: 'collect', feedback: '', image: ''
+        });
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        renderBuildingDetail(building);
+      }
+      return;
+    }
+
+    const delEntityEl = e.target.closest('[data-delete-entity]');
+    if (delEntityEl) {
+      if (!confirm('Delete this contact and all its items?')) return;
+      building.entities = building.entities.filter((ent) => ent.id !== delEntityEl.dataset.deleteEntity);
+      syncBuildingToScenario(building);
+      renderBuildingList();
       renderBuildingDetail(building);
-    });
+      return;
+    }
+
+    const delItemEl = e.target.closest('[data-delete-item]');
+    if (delItemEl) {
+      if (!confirm('Delete this item?')) return;
+      const entity = building.entities.find((ent) => ent.id === delItemEl.dataset.entityId);
+      if (entity) {
+        entity.collectionItems = entity.collectionItems.filter((i) => i.id !== delItemEl.dataset.deleteItem);
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        renderBuildingDetail(building);
+      }
+      return;
+    }
+
+    const imgClearEl = e.target.closest('[data-img-clear]');
+    if (imgClearEl) {
+      const entity = building.entities.find((ent) => ent.id === imgClearEl.dataset.entityId);
+      if (entity) {
+        entity.image = '';
+        syncBuildingToScenario(building);
+        const slot = els.buildingDetail.querySelector(`.entity-card-v2[data-entity-id="${entity.id}"] .entity-img-slot`);
+        if (slot) {
+          slot.innerHTML = `
+            <label class="secondary-btn btn-sm entity-img-upload-btn" title="Add image">
+              + Img<input type="file" accept="image/*" data-img-upload data-entity-id="${entity.id}" style="display:none;" />
+            </label>`;
+        }
+      }
+      return;
+    }
   }
 
   // ── Student result import ───────────────────────────────────────────────────
@@ -591,7 +512,7 @@
     }).join('');
 
     const mismatchWarning = mismatch
-      ? '<span class="student-result-warning">Warning: result is from scenario “' + escHtml(results.scenarioId) + '”</span>'
+      ? '<span class="student-result-warning">Warning: result is from scenario "' + escHtml(results.scenarioId) + '"</span>'
       : '';
 
     return `

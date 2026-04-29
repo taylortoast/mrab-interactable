@@ -1,0 +1,15 @@
+{
+  "studentName": "Elvis",
+  "submittedAt": "2026-04-29T14:22:28.495Z",
+  "scenarioId": "scenario-1",
+  "scenarioTitle": "335 TRS Sample Interactive Scenario",
+  "decisions": [
+    {
+      "buildingId": "bldg-001",
+      "entityId": "entity-001",
+      "itemId": "item-001",
+      "decision": "collect",
+      "timestamp": "2026-04-29T14:21:43.439Z"
+    }
+  ]
+}

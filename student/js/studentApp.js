@@ -23,24 +23,51 @@
 
   function initLogin() {
     const overlay = document.querySelector('#loginOverlay');
+    const scenarioInput = document.querySelector('#scenarioFileInput');
+    const scenarioTitle = document.querySelector('#scenarioLoadedTitle');
     const nameInput = document.querySelector('#studentNameInput');
     const beginBtn = document.querySelector('#beginScenarioBtn');
 
+    let pendingScenario = null;
+
+    function updateBeginState() {
+      beginBtn.disabled = !pendingScenario || !nameInput.value.trim();
+    }
+
+    scenarioInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      readJsonFile(file)
+        .then((data) => {
+          validateScenario(data);
+          pendingScenario = data;
+          scenarioTitle.textContent = data.title;
+          scenarioTitle.classList.remove('muted');
+        })
+        .catch((err) => {
+          pendingScenario = null;
+          scenarioTitle.textContent = 'Invalid scenario file: ' + err.message;
+          scenarioTitle.classList.add('muted');
+        })
+        .finally(updateBeginState);
+      e.target.value = '';
+    });
+
+    nameInput.addEventListener('input', updateBeginState);
     nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptLogin(); });
     beginBtn.addEventListener('click', attemptLogin);
     nameInput.focus();
 
     function attemptLogin() {
-      const name = nameInput.value.trim();
-      if (!name) { nameInput.focus(); return; }
-      state.studentName = name;
+      if (!pendingScenario || !nameInput.value.trim()) return;
+      state.studentName = nameInput.value.trim();
+      state.scenario = pendingScenario;
       overlay.remove();
       startScenario();
     }
   }
 
   function startScenario() {
-    state.scenario = loadScenario();
     els.title.textContent = state.scenario.title;
     els.nameDisplay.textContent = state.studentName;
     renderBuildings();

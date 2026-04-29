@@ -140,6 +140,41 @@
   font-size: 1.6rem;
 }
 
+/* ── Login scenario picker ───────────────────────────────────────────────── */
+
+.login-scenario-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.login-step-label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.login-file-btn {
+  display: inline-block;
+  cursor: pointer;
+  width: fit-content;
+  font-size: 1.4rem;
+  padding: 0.6rem 1rem;
+}
+
+.login-scenario-title {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+.login-name-label {
+  display: grid;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+
 /* ── Building modal entity rows ──────────────────────────────────────────── */
 
 .entity-row {

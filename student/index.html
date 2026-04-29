@@ -13,9 +13,20 @@
     <div class="login-card">
       <p class="eyebrow">335th Training Squadron</p>
       <h2>Scenario Login</h2>
-      <p class="muted">Enter your full name to begin.</p>
-      <label>Full Name <input id="studentNameInput" type="text" placeholder="First Last" autocomplete="name" /></label>
-      <button id="beginScenarioBtn" class="primary-btn">Begin Scenario</button>
+
+      <div class="login-scenario-row">
+        <span class="login-step-label">1. Select Scenario</span>
+        <label class="secondary-btn login-file-btn" for="scenarioFileInput">Choose Scenario File</label>
+        <input id="scenarioFileInput" type="file" accept=".json,application/json" style="display:none;" />
+        <p id="scenarioLoadedTitle" class="login-scenario-title muted">No scenario loaded.</p>
+      </div>
+
+      <label class="login-name-label">
+        <span class="login-step-label">2. Enter Your Name</span>
+        <input id="studentNameInput" type="text" placeholder="First Last" autocomplete="name" />
+      </label>
+
+      <button id="beginScenarioBtn" class="primary-btn" disabled>Begin Scenario</button>
     </div>
   </div>
 
@@ -45,9 +56,9 @@
 
   <div id="modalRoot"></div>
 
-  <script src="../data/scenario.js"></script>
   <script src="../shared/js/scenarioLoader.js"></script>
   <script src="../shared/js/modal.js"></script>
+  <script src="../shared/js/jsonUtils.js"></script>
   <script src="./js/studentApp.js"></script>
 </body>
 </html>
