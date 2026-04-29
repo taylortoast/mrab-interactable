@@ -1,0 +1,15 @@
+{
+  "studentName": "mike tal",
+  "submittedAt": "2026-04-29T20:14:44.576Z",
+  "scenarioId": "scenario-1",
+  "scenarioTitle": "335 TRS Sample Interactive Scenario",
+  "decisions": [
+    {
+      "buildingId": "bldg-001",
+      "entityId": "entity-004",
+      "itemId": "item-017",
+      "decision": "doNotCollect",
+      "timestamp": "2026-04-29T20:14:38.021Z"
+    }
+  ]
+}
