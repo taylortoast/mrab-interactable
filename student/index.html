@@ -35,7 +35,10 @@
       <p class="eyebrow">335th Training Squadron</p>
       <h1>Interactive Scenario Environment</h1>
     </div>
-    <button id="submitResultsBtn" class="primary-btn">Submit Results</button>
+    <div class="button-row">
+      <button id="newSessionBtn" class="secondary-btn">New Session</button>
+      <button id="submitResultsBtn" class="primary-btn">Submit Results</button>
+    </div>
   </header>
 
   <main class="student-layout">
@@ -47,10 +50,22 @@
     </section>
 
     <aside class="status-panel">
-      <h2>Scenario Status</h2>
       <p id="scenarioTitle">Loading scenario...</p>
       <p id="studentNameDisplay" class="muted"></p>
-      <div id="collectionSummary" class="summary-card">No decisions recorded.</div>
+      <div class="building-tracker-section">
+        <h4 class="building-tracker-heading">Buildings</h4>
+        <div id="buildingTracker" class="building-tracker-list"></div>
+      </div>
+      <div class="briefcase-section">
+        <div class="briefcase-header">
+          <span class="briefcase-icon">&#128188;</span>
+          <h3 class="briefcase-title">Briefcase <span id="briefcaseCount" class="briefcase-count">0</span></h3>
+          <button id="openBriefcaseBtn" class="secondary-btn btn-sm" disabled>Open Folder</button>
+        </div>
+        <div id="briefcaseList" class="briefcase-list">
+          <p class="muted briefcase-empty">No items collected yet.</p>
+        </div>
+      </div>
     </aside>
   </main>
 

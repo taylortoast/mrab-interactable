@@ -523,8 +523,15 @@ code {
   font-size: 1.7rem !important;
 }
 
+.entity-img-notice {
+  font-size: 1.2rem;
+  color: var(--muted);
+  margin: 0.3rem 0 0.6rem;
+  word-break: break-all;
+}
+
 .entity-desc-field {
-  min-height: 6rem;
+  min-height: 5rem;
   margin-bottom: 0.4rem;
 }
 
@@ -539,6 +546,39 @@ code {
 
 @media (max-width: 900px) {
   .item-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ── Item image slot ─────────────────────────────────────────────────────── */
+
+.item-img-slot {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.item-card-img {
+  width: 5.6rem;
+  height: 5.6rem;
+  object-fit: cover;
+  border-radius: 0.4rem;
+  border: 1px solid var(--border);
+  display: block;
+  flex-shrink: 0;
+}
+
+.item-img-upload-btn {
+  display: inline-flex !important;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 0 !important;
+  font-size: 1.2rem !important;
+  padding: 0.4rem 0.6rem !important;
+}
+
+.item-img-clear-btn {
+  font-size: 1.2rem !important;
+  padding: 0.4rem 0.6rem !important;
 }
 
 /* ── Item card ───────────────────────────────────────────────────────────── */
@@ -626,13 +666,6 @@ code {
   font-size: 1.4rem !important;
 }
 
-.item-feedback-area {
-  min-height: 5rem;
-  font-size: 1.3rem !important;
-  color: var(--muted);
-}
-
-.item-feedback-area::placeholder { color: var(--muted); opacity: 0.6; }
 
 /* ── Add item placeholder card ───────────────────────────────────────────── */
 
@@ -647,3 +680,56 @@ code {
   font-family: inherit;
 }
 .add-item-btn:hover { color: var(--text); }
+
+/* ── Scenario meta section ───────────────────────────────────────────────── */
+
+.scenario-meta-section {
+  margin-bottom: 1.4rem;
+  padding-bottom: 1.2rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.scenario-meta-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0 0 0.2rem;
+}
+
+/* ── Reorder buttons ─────────────────────────────────────────────────────── */
+
+.entity-reorder-btns,
+.item-reorder-btns {
+  display: flex;
+  gap: 0.3rem;
+  flex-shrink: 0;
+}
+
+.reorder-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  border-radius: 0.4rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  line-height: 1;
+  font-family: inherit;
+}
+
+.reorder-btn:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+.reorder-btn:disabled { opacity: 0.2; cursor: default; }
+
+/* ── Student result unreviewed indicator ─────────────────────────────────── */
+
+.student-result-unreviewed {
+  display: block;
+  font-size: 1.4rem;
+  color: #fb0;
+  margin-top: 0.15rem;
+}

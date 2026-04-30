@@ -3,7 +3,7 @@
 ## What This Is
 
 A local HTML/CSS/JS training tool for the 335th Training Squadron. Two websites:
-- **Student** (`student/`) – login, interactive map, click buildings, interact with entities, make collect decisions, export results as a `.json` file
+- **Student** (`student/`) – login, interactive map, click buildings, interact with entities, make Keep/Discard decisions, export results as a `.json` file
 - **Instructor** (`instructor/`) – manage building entities/collection items, import student `.json` result files and evaluate them
 
 No external libraries. No frameworks. No server required — works under `file://` and HTTP equally.
@@ -24,7 +24,7 @@ Optional server (for development): `python -m http.server 8000` from project roo
 │   └── sample-scenario.json   Archive/reference only — not loaded by app
 ├── shared/
 │   ├── css/base.css            Design system, shared component styles
-│   ├── images/                 Source images (base64 data URLs stored in scenario JSON)
+│   ├── images/                 Entity and item image files (referenced by filename in scenario JSON)
 │   ├── scenarios/              Saved scenario JSON files (scenario-1.json, scenario-2.json, …)
 │   └── js/
 │       ├── scenarioLoader.js   loadScenario() + validateScenario()
@@ -76,15 +76,18 @@ window.SCENARIO_DATA = { /* scenario object */ };
           "type": "person | section | organization",
           "name": "string",
           "description": "string",
-          "image": "string (base64 data URL or empty string)",
+          "whoTheySupport": "string",
+          "keyResponsibilities": "string",
+          "whenChapelEngagesThem": "string",
+          "image": "string (filename e.g. headshot.jpg, or empty string)",
           "collectionItems": [
             {
               "id": "string (item-XXX)",
               "title": "string",
               "content": "string",
               "correctDecision": "collect | doNotCollect",
-              "feedback": "string",
-              "image": "string (base64 data URL or empty string)"
+              "feedback": "string (legacy, not shown in UI)",
+              "image": "string (filename e.g. doc.jpg, or empty string)"
             }
           ]
         }
@@ -98,7 +101,25 @@ window.SCENARIO_DATA = { /* scenario object */ };
 - Max **5 collection items per entity**
 - Building id, name, description, and bounds are **programmer-only** — set directly in `data/scenario.js` (the seed)
 - Instructors manage entities and collection items only, via the instructor UI
+- `image` fields store a **filename only** (e.g. `headshot.jpg`), resolved to `../shared/images/headshot.jpg` at render. Backward-compatible with old base64 (`startsWith('data:')` check). Place image files in `shared/images/`.
 - `validateScenario(data)` in `scenarioLoader.js` checks id, title, and buildings fields and throws on invalid input
+
+## Student Terminology
+
+Student-facing labels use **Keep** (= `collect`) and **Discard** (= `doNotCollect`). The JSON schema values `collect`/`doNotCollect` are unchanged. Do not change the schema values.
+
+## Persistence
+
+**Student — sessionStorage** (key: `335trs-student-session`):
+- Stores `{ scenario, studentName, decisions }` on every decision and at login
+- On page load: if valid session found, skip login overlay and resume directly
+- "New Session" button in header → confirmation modal → clears session + `location.reload()`
+- Submit Results → confirmation modal → downloads JSON → clears session + `location.reload()`
+
+**Instructor — localStorage** (key: `335trs-instructor-scenario`):
+- Auto-saves on every `syncBuildingToScenario()` call and whenever a scenario is loaded
+- "Save to Browser" button in header → manual save + button text flashes "Saved!" for 1.5s
+- On page load: if localStorage has a valid scenario, it takes priority over `data/scenario.js` seed
 
 ## Student Submission Format
 
@@ -130,6 +151,7 @@ Students log in with their name before the scenario begins. Submissions export a
 1. Receive student `.json` result file
 2. Open `instructor/index.html` → Student Evaluation tab
 3. Click **Choose Result Files**, select one or more `.json` files — loaded students appear in the left panel immediately
+4. Sidebar shows correct/total score and unreviewed item count (items with no decision); detail panel shows per-decision CORRECT/INCORRECT rows
 
 ## Script Load Order
 
@@ -163,10 +185,14 @@ data/scenario.js → shared/js/scenarioLoader.js → shared/js/modal.js → shar
 
 ## Instructor Buildings Tab Layout
 
-The Buildings tab uses a two-column layout (mirroring the Student Evaluation tab):
+The Buildings tab uses a two-column layout:
 - **Left sidebar** (`#buildingList`, `.buildings-list-panel`) — clickable list of all buildings; first building auto-selected on load
-- **Right panel** (`#buildingDetail`, `.building-detail-panel`) — selected building's contacts (entities) and their collection items displayed inline with Collect/No Collect decision badges
+- **Right panel** (`#buildingDetail`, `.building-detail-panel`) — selected building's contacts (entities) and their collection items displayed inline
 
-All entity and item editing is fully inline — no modals. Forms render directly in the right panel via `buildingState.editMode`. After any save or delete the panel re-renders automatically. The old modal-chain flow (`openBuildingPanel`, `renderEntitySection`, etc.) has been removed.
+All entity and item editing is **fully inline** — always-editable, no modals, no edit mode toggle. After any save or delete the panel re-renders automatically.
 
-Entities and items both support an optional `image` field (base64 data URL). The instructor can select an image file in the inline edit form; the data URL is stored in the scenario. Thumbnails appear next to entity names and item rows in view mode. Images are intended for display in the student modal (not yet implemented on the student side).
+Entity cards include: image slot (filename + notice to place file in `shared/images/`), name input, type select, four text areas (What They Do / Who They Support / Key Responsibilities / When Chapel Engages Them), up/down reorder buttons, delete button.
+
+Item cards include: image slot (filename), title input, up/down reorder buttons, Collect/Do Not Collect toggle, content textarea, delete button. The `feedback` field remains in the JSON schema but is not exposed in the instructor UI.
+
+Scenario title and description are editable via inline inputs at the top of the Buildings tab panel; changes blur-save to localStorage automatically.

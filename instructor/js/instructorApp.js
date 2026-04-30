@@ -1,5 +1,6 @@
 (function () {
-  const MAX_ITEMS = 5;
+  const MAX_ITEMS   = 5;
+  const LS_KEY      = '335trs-instructor-scenario';
 
   let scenario;
 
@@ -14,22 +15,38 @@
   };
 
   const els = {
-    exportBtn: document.querySelector('#exportScenarioBtn'),
-    loadScenarioInput: document.querySelector('#loadScenarioInput'),
-    buildingList: document.querySelector('#buildingList'),
-    buildingDetail: document.querySelector('#buildingDetail'),
-    evaluationOutput: document.querySelector('#evaluationOutput'),
+    exportBtn:           document.querySelector('#exportScenarioBtn'),
+    loadScenarioInput:   document.querySelector('#loadScenarioInput'),
+    saveToLocalBtn:      document.querySelector('#saveToLocalBtn'),
+    scenarioTitleInput:  document.querySelector('#scenarioTitleInput'),
+    scenarioDescInput:   document.querySelector('#scenarioDescInput'),
+    buildingList:        document.querySelector('#buildingList'),
+    buildingDetail:      document.querySelector('#buildingDetail'),
+    evaluationOutput:    document.querySelector('#evaluationOutput'),
     studentResultsInput: document.querySelector('#studentResultsInput'),
-    studentResultsStatus: document.querySelector('#studentResultsStatus'),
-    studentResultsList: document.querySelector('#studentResultsList')
+    studentResultsStatus:document.querySelector('#studentResultsStatus'),
+    studentResultsList:  document.querySelector('#studentResultsList')
   };
 
   init();
 
   function init() {
-    scenario = JSON.parse(JSON.stringify(loadScenario()));
+    const saved = loadFromLocalStorage();
+    if (saved) {
+      try {
+        validateScenario(saved);
+        scenario = JSON.parse(JSON.stringify(saved));
+      } catch (e) {
+        scenario = JSON.parse(JSON.stringify(loadScenario()));
+      }
+    } else {
+      scenario = JSON.parse(JSON.stringify(loadScenario()));
+    }
+
     initBuildingDetailListeners();
     bindEvents();
+    syncScenarioMetaInputs();
+    initScenarioMeta();
     renderBuildingList();
     if (scenario.buildings.length) selectBuilding(scenario.buildings[0]);
     initTabs();
@@ -39,6 +56,51 @@
     els.exportBtn.addEventListener('click', exportScenarioJson);
     els.loadScenarioInput?.addEventListener('change', handleLoadScenario);
     els.studentResultsInput?.addEventListener('change', handleStudentResultsSelected);
+    els.saveToLocalBtn?.addEventListener('click', () => {
+      saveToLocalStorage();
+      const btn = els.saveToLocalBtn;
+      const orig = btn.textContent;
+      btn.textContent = 'Saved!';
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    });
+  }
+
+  // ── Local storage ───────────────────────────────────────────────────────────
+
+  function saveToLocalStorage() {
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(scenario));
+    } catch (e) {}
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ── Scenario meta inputs ────────────────────────────────────────────────────
+
+  function syncScenarioMetaInputs() {
+    if (els.scenarioTitleInput) els.scenarioTitleInput.value = scenario.title || '';
+    if (els.scenarioDescInput)  els.scenarioDescInput.value  = scenario.description || '';
+  }
+
+  function initScenarioMeta() {
+    els.scenarioTitleInput?.addEventListener('blur', () => {
+      const val = els.scenarioTitleInput.value.trim();
+      if (val) scenario.title = val;
+      else els.scenarioTitleInput.value = scenario.title;
+      saveToLocalStorage();
+    });
+    els.scenarioDescInput?.addEventListener('blur', () => {
+      scenario.description = els.scenarioDescInput.value;
+      saveToLocalStorage();
+    });
   }
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
@@ -68,8 +130,10 @@
         validateScenario(data);
         scenario = JSON.parse(JSON.stringify(data));
         buildingState.selectedBuildingId = null;
+        syncScenarioMetaInputs();
         renderBuildingList();
         if (scenario.buildings.length) selectBuilding(scenario.buildings[0]);
+        saveToLocalStorage();
       })
       .catch((err) => alert('Could not load scenario: ' + err.message));
     event.target.value = '';
@@ -105,7 +169,8 @@
   // ── Building detail panel ───────────────────────────────────────────────────
 
   function renderBuildingDetail(building) {
-    const entityCards = building.entities.map((e) => renderEntityCard(e)).join('');
+    const total = building.entities.length;
+    const entityCards = building.entities.map((e, i) => renderEntityCard(e, i, total)).join('');
     els.buildingDetail.innerHTML = `
       <div class="building-detail-card">
         <div class="building-detail-header">
@@ -116,19 +181,27 @@
       </div>`;
   }
 
-  function renderEntityCard(entity) {
+  function entityImgSrc(image) {
+    if (!image) return null;
+    return image.startsWith('data:') ? image : '../shared/images/' + image;
+  }
+
+  function renderEntityCard(entity, entityIndex, totalEntities) {
     const atMax = entity.collectionItems.length >= MAX_ITEMS;
-    const itemCards = entity.collectionItems.map((item) => renderItemCard(item, entity.id)).join('');
-    const imgHtml = entity.image
-      ? `<img src="${escHtml(entity.image)}" class="entity-card-img" alt="" />`
-      : '';
+    const total = entity.collectionItems.length;
+    const itemCards = entity.collectionItems.map((item, i) => renderItemCard(item, entity.id, i, total)).join('');
+    const resolvedSrc = entityImgSrc(entity.image);
+    const imgHtml = resolvedSrc ? `<img src="${escHtml(resolvedSrc)}" class="entity-card-img" alt="" />` : '';
     const imgChangeBtn = `
       <label class="secondary-btn btn-sm entity-img-upload-btn" title="${entity.image ? 'Change image' : 'Add image'}">
-        ${entity.image ? '↺' : '+ Img'}
+        ${entity.image ? '&#x21BA;' : '+ Img'}
         <input type="file" accept="image/*" data-img-upload data-entity-id="${entity.id}" style="display:none;" />
       </label>`;
     const imgClearBtn = entity.image
-      ? `<button class="secondary-btn btn-sm danger entity-img-clear-btn" data-img-clear data-entity-id="${entity.id}" title="Remove image">×</button>`
+      ? `<button class="secondary-btn btn-sm danger entity-img-clear-btn" data-img-clear data-entity-id="${entity.id}" title="Remove image">&#x00D7;</button>`
+      : '';
+    const imgNotice = entity.image && !entity.image.startsWith('data:')
+      ? `<p class="entity-img-notice muted-sm">Place <strong>${escHtml(entity.image)}</strong> in shared/images/</p>`
       : '';
 
     return `
@@ -150,10 +223,23 @@
               </select>
             </div>
           </div>
+          <div class="entity-reorder-btns">
+            <button class="reorder-btn" ${entityIndex === 0 ? 'disabled' : ''}
+              data-move-entity="up" data-entity-id="${entity.id}" title="Move up">↑</button>
+            <button class="reorder-btn" ${entityIndex === totalEntities - 1 ? 'disabled' : ''}
+              data-move-entity="down" data-entity-id="${entity.id}" title="Move down">↓</button>
+          </div>
           <button class="secondary-btn btn-sm danger" data-delete-entity="${entity.id}">Delete</button>
         </div>
-        <textarea class="inline-textarea entity-desc-field" placeholder="Description"
+        ${imgNotice}
+        <textarea class="inline-textarea entity-desc-field" placeholder="What They Do"
           data-entity-field="description" data-entity-id="${entity.id}">${escHtml(entity.description)}</textarea>
+        <textarea class="inline-textarea entity-desc-field" placeholder="Who They Support"
+          data-entity-field="whoTheySupport" data-entity-id="${entity.id}">${escHtml(entity.whoTheySupport || '')}</textarea>
+        <textarea class="inline-textarea entity-desc-field" placeholder="Key Responsibilities"
+          data-entity-field="keyResponsibilities" data-entity-id="${entity.id}">${escHtml(entity.keyResponsibilities || '')}</textarea>
+        <textarea class="inline-textarea entity-desc-field" placeholder="When Chapel Engages Them"
+          data-entity-field="whenChapelEngagesThem" data-entity-id="${entity.id}">${escHtml(entity.whenChapelEngagesThem || '')}</textarea>
         <div class="item-card-grid">
           ${itemCards}
           ${!atMax ? `<div class="item-card item-card-add"><button class="add-item-btn" data-add-item data-entity-id="${entity.id}">+ Add Item</button></div>` : ''}
@@ -161,13 +247,36 @@
       </div>`;
   }
 
-  function renderItemCard(item, entityId) {
-    const isCollect = item.correctDecision === 'collect';
+  function renderItemCard(item, entityId, itemIndex, totalItems) {
+    const isCollect  = item.correctDecision === 'collect';
+    const resolvedSrc = entityImgSrc(item.image);
+    const imgHtml = resolvedSrc ? `<img src="${escHtml(resolvedSrc)}" class="item-card-img" alt="" />` : '';
+    const imgNotice = item.image && !item.image.startsWith('data:')
+      ? `<p class="entity-img-notice muted-sm">Place <strong>${escHtml(item.image)}</strong> in shared/images/</p>`
+      : '';
+    const uploadBtn = `
+      <label class="secondary-btn btn-sm item-img-upload-btn" title="${item.image ? 'Change image' : 'Add image'}">
+        ${item.image ? '&#x21BA;' : '+ Img'}
+        <input type="file" accept="image/*" data-item-img-upload
+          data-item-id="${item.id}" data-entity-id="${entityId}" style="display:none;" />
+      </label>`;
+    const clearBtn = item.image
+      ? `<button class="secondary-btn btn-sm danger item-img-clear-btn"
+           data-item-img-clear data-item-id="${item.id}" data-entity-id="${entityId}" title="Remove image">&#x00D7;</button>`
+      : '';
     return `
       <div class="item-card" data-item-id="${item.id}" data-entity-id="${entityId}">
+        <div class="item-img-slot">${imgHtml}${uploadBtn}${clearBtn}</div>
+        ${imgNotice}
         <div class="item-card-header">
           <input class="inline-input item-title-input" type="text" value="${escHtml(item.title)}"
             placeholder="Item title" data-item-field="title" data-item-id="${item.id}" data-entity-id="${entityId}" />
+          <div class="item-reorder-btns">
+            <button class="reorder-btn" ${itemIndex === 0 ? 'disabled' : ''}
+              data-move-item="up" data-item-id="${item.id}" data-entity-id="${entityId}" title="Move up">↑</button>
+            <button class="reorder-btn" ${itemIndex === totalItems - 1 ? 'disabled' : ''}
+              data-move-item="down" data-item-id="${item.id}" data-entity-id="${entityId}" title="Move down">↓</button>
+          </div>
           <button class="item-delete-btn secondary-btn btn-sm danger"
             data-delete-item="${item.id}" data-entity-id="${entityId}" title="Delete">×</button>
         </div>
@@ -178,17 +287,15 @@
         </button>
         <textarea class="inline-textarea item-content-area" placeholder="Instructor Input"
           data-item-field="content" data-item-id="${item.id}" data-entity-id="${entityId}">${escHtml(item.content)}</textarea>
-        <textarea class="inline-textarea item-feedback-area" placeholder="Feedback (shown after decision)"
-          data-item-field="feedback" data-item-id="${item.id}" data-entity-id="${entityId}">${escHtml(item.feedback)}</textarea>
       </div>`;
   }
 
-  // ── Building detail event delegation (single persistent listener) ───────────
+  // ── Building detail event delegation ────────────────────────────────────────
 
   function initBuildingDetailListeners() {
-    els.buildingDetail.addEventListener('blur', onDetailBlur, true);
+    els.buildingDetail.addEventListener('blur',   onDetailBlur,   true);
     els.buildingDetail.addEventListener('change', onDetailChange);
-    els.buildingDetail.addEventListener('click', onDetailClick);
+    els.buildingDetail.addEventListener('click',  onDetailClick);
   }
 
   function currentBuilding() {
@@ -196,7 +303,7 @@
   }
 
   function onDetailBlur(e) {
-    const el = e.target;
+    const el       = e.target;
     const building = currentBuilding();
     if (!building) return;
 
@@ -212,7 +319,7 @@
       if (el.dataset.entityField === 'name') renderBuildingList();
     } else if (el.dataset.itemField) {
       const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
-      const item = entity?.collectionItems.find((i) => i.id === el.dataset.itemId);
+      const item   = entity?.collectionItems.find((i) => i.id === el.dataset.itemId);
       if (!item) return;
       item[el.dataset.itemField] = el.value;
       syncEntityToBuilding(building, entity);
@@ -221,7 +328,7 @@
   }
 
   function onDetailChange(e) {
-    const el = e.target;
+    const el       = e.target;
     const building = currentBuilding();
     if (!building) return;
 
@@ -237,24 +344,24 @@
     if (el.dataset.imgUpload !== undefined) {
       const file = el.files[0];
       if (!file) return;
-      const entityId = el.dataset.entityId;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const entity = building.entities.find((ent) => ent.id === entityId);
-        if (!entity) return;
-        entity.image = reader.result;
-        syncBuildingToScenario(building);
-        const slot = els.buildingDetail.querySelector(`.entity-card-v2[data-entity-id="${entityId}"] .entity-img-slot`);
-        if (slot) {
-          slot.innerHTML = `
-            <img src="${escHtml(reader.result)}" class="entity-card-img" alt="" />
-            <label class="secondary-btn btn-sm entity-img-upload-btn" title="Change image">
-              ↺<input type="file" accept="image/*" data-img-upload data-entity-id="${entityId}" style="display:none;" />
-            </label>
-            <button class="secondary-btn btn-sm danger entity-img-clear-btn" data-img-clear data-entity-id="${entityId}" title="Remove image">×</button>`;
-        }
-      };
-      reader.readAsDataURL(file);
+      const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
+      if (!entity) return;
+      entity.image = file.name;
+      syncBuildingToScenario(building);
+      renderBuildingDetail(building);
+      el.value = '';
+    }
+
+    if (el.dataset.itemImgUpload !== undefined) {
+      const file = el.files[0];
+      if (!file) return;
+      const entity = building.entities.find((ent) => ent.id === el.dataset.entityId);
+      const item   = entity?.collectionItems.find((i) => i.id === el.dataset.itemId);
+      if (!item) return;
+      item.image = file.name;
+      syncEntityToBuilding(building, entity);
+      syncBuildingToScenario(building);
+      renderBuildingDetail(building);
       el.value = '';
     }
   }
@@ -266,7 +373,9 @@
     if (e.target.id === 'addEntityBtn') {
       building.entities.push({
         id: 'entity-' + Date.now(),
-        type: 'person', name: 'New Contact', description: '', image: '', collectionItems: []
+        type: 'person', name: 'New Contact', description: '',
+        whoTheySupport: '', keyResponsibilities: '', whenChapelEngagesThem: '',
+        image: '', collectionItems: []
       });
       syncBuildingToScenario(building);
       renderBuildingList();
@@ -274,10 +383,39 @@
       return;
     }
 
+    const moveEntityEl = e.target.closest('[data-move-entity]');
+    if (moveEntityEl) {
+      const dir = moveEntityEl.dataset.moveEntity;
+      const idx = building.entities.findIndex((ent) => ent.id === moveEntityEl.dataset.entityId);
+      const swap = dir === 'up' ? idx - 1 : idx + 1;
+      if (swap >= 0 && swap < building.entities.length) {
+        [building.entities[idx], building.entities[swap]] = [building.entities[swap], building.entities[idx]];
+        syncBuildingToScenario(building);
+        renderBuildingDetail(building);
+      }
+      return;
+    }
+
+    const moveItemEl = e.target.closest('[data-move-item]');
+    if (moveItemEl) {
+      const dir    = moveItemEl.dataset.moveItem;
+      const entity = building.entities.find((ent) => ent.id === moveItemEl.dataset.entityId);
+      if (!entity) return;
+      const idx  = entity.collectionItems.findIndex((i) => i.id === moveItemEl.dataset.itemId);
+      const swap = dir === 'up' ? idx - 1 : idx + 1;
+      if (swap >= 0 && swap < entity.collectionItems.length) {
+        [entity.collectionItems[idx], entity.collectionItems[swap]] = [entity.collectionItems[swap], entity.collectionItems[idx]];
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        renderBuildingDetail(building);
+      }
+      return;
+    }
+
     const toggle = e.target.closest('[data-toggle-decision]');
     if (toggle) {
       const entity = building.entities.find((ent) => ent.id === toggle.dataset.entityId);
-      const item = entity?.collectionItems.find((i) => i.id === toggle.dataset.itemId);
+      const item   = entity?.collectionItems.find((i) => i.id === toggle.dataset.itemId);
       if (item) {
         item.correctDecision = item.correctDecision === 'collect' ? 'doNotCollect' : 'collect';
         syncEntityToBuilding(building, entity);
@@ -333,13 +471,20 @@
       if (entity) {
         entity.image = '';
         syncBuildingToScenario(building);
-        const slot = els.buildingDetail.querySelector(`.entity-card-v2[data-entity-id="${entity.id}"] .entity-img-slot`);
-        if (slot) {
-          slot.innerHTML = `
-            <label class="secondary-btn btn-sm entity-img-upload-btn" title="Add image">
-              + Img<input type="file" accept="image/*" data-img-upload data-entity-id="${entity.id}" style="display:none;" />
-            </label>`;
-        }
+        renderBuildingDetail(building);
+      }
+      return;
+    }
+
+    const itemImgClearEl = e.target.closest('[data-item-img-clear]');
+    if (itemImgClearEl) {
+      const entity = building.entities.find((ent) => ent.id === itemImgClearEl.dataset.entityId);
+      const item   = entity?.collectionItems.find((i) => i.id === itemImgClearEl.dataset.itemId);
+      if (item) {
+        item.image = '';
+        syncEntityToBuilding(building, entity);
+        syncBuildingToScenario(building);
+        renderBuildingDetail(building);
       }
       return;
     }
@@ -394,18 +539,18 @@
     if (!raw || typeof raw !== 'object') throw new Error('Result file is not a JSON object.');
     if (!Array.isArray(raw.decisions)) throw new Error('Result file is missing decisions array.');
     return {
-      localId: filename + '-' + Date.now() + '-' + Math.random().toString(16).slice(2),
+      localId:      filename + '-' + Date.now() + '-' + Math.random().toString(16).slice(2),
       filename,
-      studentName: String(raw.studentName || 'Unknown Student').trim(),
-      submittedAt: raw.submittedAt || null,
-      scenarioId: raw.scenarioId || 'unknown-scenario',
-      scenarioTitle: raw.scenarioTitle || '',
-      decisions: raw.decisions.map((d) => ({
+      studentName:  String(raw.studentName || 'Unknown Student').trim(),
+      submittedAt:  raw.submittedAt || null,
+      scenarioId:   raw.scenarioId || 'unknown-scenario',
+      scenarioTitle:raw.scenarioTitle || '',
+      decisions:    raw.decisions.map((d) => ({
         buildingId: d.buildingId,
-        entityId: d.entityId,
-        itemId: d.itemId,
-        decision: d.decision,
-        timestamp: d.timestamp || null
+        entityId:   d.entityId,
+        itemId:     d.itemId,
+        decision:   d.decision,
+        timestamp:  d.timestamp || null
       }))
     };
   }
@@ -416,13 +561,15 @@
       return;
     }
     els.studentResultsList.innerHTML = evaluationState.submissions.map((sub) => {
-      const score = calculateSubmissionScore(sub);
-      const selected = sub.localId === evaluationState.selectedSubmissionId;
-      const mismatch = sub.scenarioId !== scenario.id;
+      const score      = calculateSubmissionScore(sub);
+      const unreviewed = countUnreviewed(sub);
+      const selected   = sub.localId === evaluationState.selectedSubmissionId;
+      const mismatch   = sub.scenarioId !== scenario.id;
       return `
         <button class="student-result-list-item${selected ? ' active' : ''}" data-submission-id="${escHtml(sub.localId)}">
           <span class="student-result-name">${escHtml(sub.studentName)}</span>
           <span class="student-result-meta">${score.correct} / ${score.total} correct</span>
+          ${unreviewed > 0 ? `<span class="student-result-unreviewed">${unreviewed} not reviewed</span>` : ''}
           ${mismatch ? '<span class="student-result-warning">Scenario mismatch</span>' : ''}
         </button>
       `;
@@ -460,28 +607,35 @@
 
   function findScenarioRefs(decision) {
     const building = scenario.buildings.find((b) => b.id === decision.buildingId);
-    const entity = building?.entities.find((e) => e.id === decision.entityId);
-    const item = entity?.collectionItems.find((i) => i.id === decision.itemId);
+    const entity   = building?.entities.find((e) => e.id === decision.entityId);
+    const item     = entity?.collectionItems.find((i) => i.id === decision.itemId);
     return { building, entity, item };
   }
 
   function calculateSubmissionScore(results) {
     const decisions = results.decisions || [];
-    const total = decisions.length;
-    const correct = decisions.filter((d) => {
+    const total     = decisions.length;
+    const correct   = decisions.filter((d) => {
       const { item } = findScenarioRefs(d);
       return item && d.decision === item.correctDecision;
     }).length;
     return { correct, total };
   }
 
+  function countUnreviewed(results) {
+    const totalItems = scenario.buildings.reduce((sum, b) =>
+      sum + b.entities.reduce((s, e) => s + e.collectionItems.length, 0), 0);
+    return Math.max(0, totalItems - (results.decisions || []).length);
+  }
+
   // ── Evaluation rendering ────────────────────────────────────────────────────
 
   function renderStudentCard(results) {
-    const decisions = results.decisions || [];
+    const decisions  = results.decisions || [];
     const { correct, total } = calculateSubmissionScore(results);
+    const unreviewed = countUnreviewed(results);
     const scoreClass = total === 0 ? '' : (correct === total ? 'score-perfect' : correct >= total / 2 ? 'score-passing' : 'score-failing');
-    const mismatch = results.scenarioId !== scenario.id;
+    const mismatch   = results.scenarioId !== scenario.id;
 
     const rows = decisions.map((d) => {
       const { building, entity, item } = findScenarioRefs(d);
@@ -490,9 +644,9 @@
         return '<div class="eval-row eval-unknown"><strong>Unknown item</strong> (ID: ' + escHtml(d.itemId) + ')</div>';
       }
 
-      const isCorrect = d.decision === item.correctDecision;
+      const isCorrect     = d.decision === item.correctDecision;
       const decisionLabel = d.decision === 'collect' ? 'Collect' : 'Do Not Collect';
-      const correctLabel = item.correctDecision === 'collect' ? 'Collect' : 'Do Not Collect';
+      const correctLabel  = item.correctDecision === 'collect' ? 'Collect' : 'Do Not Collect';
 
       return `
         <div class="eval-row ${isCorrect ? 'eval-correct' : 'eval-incorrect'}">
@@ -506,11 +660,13 @@
             <span>Correct: <strong>${correctLabel}</strong></span>
             <span class="eval-result">${isCorrect ? 'CORRECT' : 'INCORRECT'}</span>
           </div>
-          <div class="eval-feedback muted">${escHtml(item.feedback)}</div>
         </div>
       `;
     }).join('');
 
+    const unreviewedNote = unreviewed > 0
+      ? `<span class="student-result-unreviewed">${unreviewed} item${unreviewed !== 1 ? 's' : ''} not reviewed</span>`
+      : '';
     const mismatchWarning = mismatch
       ? '<span class="student-result-warning">Warning: result is from scenario "' + escHtml(results.scenarioId) + '"</span>'
       : '';
@@ -521,6 +677,7 @@
           <div>
             <span class="student-name">${escHtml(results.studentName || 'Unknown Student')}</span>
             <span class="student-submitted muted">Submitted ${results.submittedAt ? new Date(results.submittedAt).toLocaleString() : 'Unknown date'}</span>
+            ${unreviewedNote}
             ${mismatchWarning}
           </div>
           <div class="student-score ${scoreClass}">${correct} / ${total} correct</div>
@@ -537,6 +694,7 @@
   function syncBuildingToScenario(building) {
     const idx = scenario.buildings.findIndex((b) => b.id === building.id);
     if (idx >= 0) scenario.buildings[idx] = building;
+    saveToLocalStorage();
   }
 
   function syncEntityToBuilding(building, entity) {

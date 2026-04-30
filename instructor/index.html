@@ -17,6 +17,7 @@
     <div class="button-row">
       <label class="secondary-btn" for="loadScenarioInput" style="cursor:pointer;">Load Scenario</label>
       <input id="loadScenarioInput" type="file" accept=".json,application/json" style="display:none;" />
+      <button id="saveToLocalBtn" class="secondary-btn">Save to Browser</button>
       <button id="exportScenarioBtn" class="primary-btn">Export Scenario</button>
     </div>
   </header>
@@ -31,6 +32,17 @@
     <div id="tab-buildings" class="tab-panel active">
       <div class="panel-content buildings-panel">
         <h2>Buildings</h2>
+
+        <div class="scenario-meta-section">
+          <div>
+            <p class="scenario-meta-label">Scenario Title</p>
+            <input id="scenarioTitleInput" class="inline-input" type="text" placeholder="Scenario title..." />
+          </div>
+          <div>
+            <p class="scenario-meta-label">Description</p>
+            <textarea id="scenarioDescInput" class="inline-textarea" placeholder="Scenario description..." rows="2"></textarea>
+          </div>
+        </div>
 
         <div class="buildings-layout">
           <aside class="buildings-list-panel">

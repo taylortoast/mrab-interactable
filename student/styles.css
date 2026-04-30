@@ -38,11 +38,22 @@
 
 .building-marker {
   position: absolute;
-  border: 2px solid rgba(80, 160, 255, 0);
-  background: rgba(80, 160, 255, 0);
-  color: rgba(80, 160, 255, 0);
+  border: 2px solid transparent;
+  background: transparent;
+  color: transparent;
   font-weight: 700;
   cursor: pointer;
+  border-radius: 0.3rem;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+
+.building-marker:hover,
+.building-marker:focus-visible {
+  background: rgba(80, 160, 255, 0);
+  border-color: rgba(80, 160, 255, 0);
+  outline: none;
 }
 
 .summary-card {
@@ -65,8 +76,19 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.8rem;
   text-align: left;
   width: 100%;
+}
+
+.item-btn-title { flex: 1; }
+
+.item-btn-thumb {
+  width: 3.6rem;
+  height: 3.6rem;
+  object-fit: cover;
+  border-radius: 0.3rem;
+  flex-shrink: 0;
 }
 
 .entity-type-badge {
@@ -115,7 +137,9 @@
   gap: 1rem;
 }
 
-.login-card h2 { margin: 0; }
+.login-card h2 {
+  margin: 0;
+}
 
 .login-card label {
   display: grid;
@@ -190,7 +214,9 @@
   cursor: pointer;
   color: var(--text);
 }
-.entity-row:hover { border-color: var(--accent); }
+.entity-row:hover {
+  border-color: var(--accent);
+}
 
 .entity-row-thumb {
   width: 5.6rem;
@@ -213,12 +239,21 @@
   font-size: 2rem;
 }
 
-.entity-row-arrow { color: var(--accent); flex-shrink: 0; }
-.entity-row-name  { font-weight: 700; font-size: 1.6rem; text-transform: uppercase; }
+.entity-row-arrow {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.entity-row-name {
+  font-weight: 700;
+  font-size: 1.6rem;
+  text-transform: uppercase;
+}
 
 /* ── Two-column modal layout (entity detail + item review) ───────────────── */
 
-.modal-card.modal-wide { width: min(80rem, 100%); }
+.modal-card.modal-wide {
+  width: min(80rem, 100%);
+}
 
 .modal-two-col {
   display: grid;
@@ -253,3 +288,221 @@
   margin-top: 1rem;
   margin-bottom: 0.6rem;
 }
+
+/* ── Briefcase panel ─────────────────────────────────────────────────────── */
+
+.briefcase-section {
+  margin-top: 1.4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.2rem;
+}
+
+.briefcase-header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.briefcase-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+
+.briefcase-title {
+  margin: 0;
+  font-size: 1.6rem;
+  flex: 1;
+}
+
+.briefcase-count {
+  display: inline-block;
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  min-width: 1.8rem;
+  text-align: center;
+  vertical-align: middle;
+  margin-left: 0.3rem;
+}
+
+.briefcase-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: 36rem;
+  overflow-y: auto;
+}
+
+.briefcase-empty { font-size: 1.4rem; }
+
+.briefcase-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.6rem 0.8rem;
+  background: var(--panel-dark);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+}
+
+.briefcase-item-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.briefcase-item-location {
+  font-size: 1.1rem;
+  color: var(--muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.briefcase-item-entity {
+  font-size: 1.2rem;
+  color: var(--muted);
+}
+
+.briefcase-item-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.briefcase-item-delete {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  flex-shrink: 0;
+}
+.briefcase-item-delete:hover { color: #e55; }
+
+/* ── Entity modal extras ─────────────────────────────────────────────────── */
+
+.entity-field-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 0.2rem;
+}
+
+.more-info-btn {
+  margin-top: 0.8rem;
+  margin-bottom: 0.2rem;
+  font-size: 1.3rem !important;
+  padding: 0.4rem 0.9rem !important;
+}
+
+/* ── More Info modal ─────────────────────────────────────────────────────── */
+
+.more-info-field { margin-bottom: 1.4rem; }
+
+.more-info-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  margin-bottom: 0.3rem;
+}
+
+/* ── Open Folder modal ───────────────────────────────────────────────────── */
+
+.briefcase-modal-building { margin-bottom: 1.6rem; }
+
+.briefcase-modal-building-name {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.briefcase-modal-item {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.4rem 0.6rem;
+  margin-bottom: 0.3rem;
+  background: var(--panel-dark);
+  border-radius: 0.4rem;
+}
+
+.briefcase-modal-entity { font-size: 1.3rem; color: var(--muted); flex-shrink: 0; }
+.briefcase-modal-title  { font-size: 1.4rem; font-weight: 600; }
+
+/* ── Building tracker ─────────────────────────────────────────────────────── */
+
+.building-tracker-section {
+  margin-top: 1.2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+  margin-bottom: 0.4rem;
+}
+
+.building-tracker-heading {
+  margin: 0 0 0.7rem;
+  font-size: 1.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.building-tracker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.building-tracker-item {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 1.4rem;
+  padding: 0.2rem 0;
+}
+
+.tracker-dot {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tracker-dot.not-visited { background: var(--muted); opacity: 0.35; }
+.tracker-dot.visited     { background: #fb0; }
+.tracker-dot.complete    { background: #3c8; }
+
+.tracker-label.not-visited { color: var(--muted); }
+.tracker-label.visited     { color: var(--text); }
+.tracker-label.complete    { color: var(--text); }
+
+/* ── Briefcase item link (navigable) ─────────────────────────────────────── */
+
+.briefcase-item-link {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: none;
+  border: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.briefcase-item-link:hover .briefcase-item-title { color: var(--accent); }
